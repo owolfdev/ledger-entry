@@ -1,5 +1,24 @@
 "use client";
 
+/**
+ * Monaco Editor + Next.js 15 Integration Notes:
+ *
+ * 🔧 CRITICAL: Monaco Editor requires browser-only APIs (window, document)
+ *
+ * ✅ DO:
+ * - Use `next/dynamic` with `ssr: false` for Monaco Editor components
+ * - Use dynamic imports for monaco-vim: `import("monaco-vim").then(...)`
+ * - Initialize Vim mode only after editor mounts (useEffect/onMount)
+ *
+ * ❌ DON'T:
+ * - Import monaco-vim at top level (causes SSR "window is not defined" errors)
+ * - Use static imports for browser-only Monaco packages
+ * - Initialize Vim mode during component render
+ *
+ * 📚 Pattern: Browser-only libraries in Next.js 15 App Router need dynamic imports
+ * to prevent SSR conflicts. Monaco Editor ecosystem is entirely client-side.
+ */
+
 import type React from "react";
 
 import { useState, useRef, useEffect } from "react";
@@ -88,6 +107,7 @@ export default function LedgerInterface() {
   const [isModified, setIsModified] = useState(false);
   const [cursorPosition, setCursorPosition] = useState({ line: 1, column: 1 });
   const [isEditorLoading, setIsEditorLoading] = useState(true);
+  const [isVimModeEnabled, setIsVimModeEnabled] = useState(false);
 
   // Panel visibility state
   const [showTerminal, setShowTerminal] = useState(true);
@@ -106,6 +126,57 @@ export default function LedgerInterface() {
   const logsEndRef = useRef<HTMLDivElement>(null);
   const editorRef = useRef<any>(null);
   const vimModeRef = useRef<any>(null);
+
+  // Toggle Vim mode on/off
+  const toggleVimMode = () => {
+    console.log("Toggle Vim mode clicked! Current state:", isVimModeEnabled);
+
+    if (!editorRef.current) {
+      console.log("No editor ref, cannot toggle");
+      return;
+    }
+
+    if (isVimModeEnabled) {
+      // Disable Vim mode
+      console.log("Disabling Vim mode...");
+      if (vimModeRef.current) {
+        vimModeRef.current.dispose();
+        vimModeRef.current = null;
+      }
+      const vimStatusBar = document.getElementById("vim-status-bar");
+      if (vimStatusBar) {
+        vimStatusBar.textContent = "DISABLED";
+        vimStatusBar.style.opacity = "0.5";
+      }
+      setIsVimModeEnabled(false);
+    } else {
+      // Enable Vim mode
+      console.log("Enabling Vim mode...");
+      const vimStatusBar = document.getElementById("vim-status-bar");
+      if (vimStatusBar) {
+        vimStatusBar.style.opacity = "1";
+        vimStatusBar.textContent = "NORMAL";
+      }
+
+      // Initialize Vim mode
+      import("monaco-vim")
+        .then((vim) => {
+          try {
+            if (editorRef.current && vimStatusBar) {
+              const vimMode = vim.initVimMode(editorRef.current, vimStatusBar);
+              vimModeRef.current = vimMode;
+              setIsVimModeEnabled(true);
+              console.log("Vim mode enabled successfully");
+            }
+          } catch (error) {
+            console.error("Failed to initialize monaco-vim:", error);
+          }
+        })
+        .catch((error) => {
+          console.error("Failed to load monaco-vim:", error);
+        });
+    }
+  };
 
   // Auto-scroll logs to bottom
   useEffect(() => {
@@ -491,6 +562,8 @@ export default function LedgerInterface() {
                 isEditorLoading={isEditorLoading}
                 setIsEditorLoading={setIsEditorLoading}
                 vimModeRef={vimModeRef}
+                isVimModeEnabled={isVimModeEnabled}
+                toggleVimMode={toggleVimMode}
               />
             </Panel>
           </PanelGroup>
@@ -526,6 +599,8 @@ export default function LedgerInterface() {
               isEditorLoading={isEditorLoading}
               setIsEditorLoading={setIsEditorLoading}
               vimModeRef={vimModeRef}
+              isVimModeEnabled={isVimModeEnabled}
+              toggleVimMode={toggleVimMode}
             />
           </div>
         ) : (
@@ -561,8 +636,8 @@ function TerminalPanel({
   logs: LogMessage[];
   command: string;
   commandHistory: string[];
-  commandInputRef: React.RefObject<HTMLTextAreaElement>;
-  logsEndRef: React.RefObject<HTMLDivElement>;
+  commandInputRef: React.RefObject<HTMLTextAreaElement | null>;
+  logsEndRef: React.RefObject<HTMLDivElement | null>;
   handleCommandChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
   handleKeyDown: (e: React.KeyboardEvent<HTMLTextAreaElement>) => void;
   setLogs: (logs: LogMessage[]) => void;
@@ -659,6 +734,8 @@ function EditorPanel({
   isEditorLoading,
   setIsEditorLoading,
   vimModeRef,
+  isVimModeEnabled,
+  toggleVimMode,
 }: {
   fileName: string;
   isModified: boolean;
@@ -671,6 +748,8 @@ function EditorPanel({
   isEditorLoading: boolean;
   setIsEditorLoading: (loading: boolean) => void;
   vimModeRef: React.RefObject<any>;
+  isVimModeEnabled: boolean;
+  toggleVimMode: () => void;
 }) {
   return (
     <div className="h-full flex flex-col editor">
@@ -688,20 +767,16 @@ function EditorPanel({
           </div>
           <div className="flex items-center gap-2">
             <Button
-              variant="outline"
+              variant={isVimModeEnabled ? "default" : "outline"}
               size="sm"
-              onClick={() => {
-                console.log("Testing Vim mode manually...");
-                const vimMode = (vimModeRef as any).current;
-                if (vimMode) {
-                  console.log("Vim mode instance:", vimMode);
-                  console.log("Available methods:", Object.keys(vimMode));
-                } else {
-                  console.log("Vim mode not initialized");
-                }
-              }}
+              onClick={toggleVimMode}
+              className={
+                isVimModeEnabled
+                  ? "bg-green-600 hover:bg-green-700 text-white border-green-600"
+                  : ""
+              }
             >
-              Test Vim
+              {isVimModeEnabled ? "Vim ON" : "Vim OFF"}
             </Button>
             <Button
               variant="outline"
@@ -766,9 +841,7 @@ function EditorPanel({
           }}
           onMount={(editor, monaco) => {
             // Store the editor instance for future use
-            if (editorRef.current) {
-              (editorRef.current as any) = editor;
-            }
+            editorRef.current = editor;
 
             // Ensure dark theme is applied
             monaco.editor.setTheme("vs-dark");
@@ -778,6 +851,8 @@ function EditorPanel({
 
             // Initialize Vim mode using monaco-vim (same as working implementation)
             setTimeout(() => {
+              if (!isVimModeEnabled) return;
+
               console.log("Initializing monaco-vim...");
 
               // Create status bar element for Vim mode
@@ -871,8 +946,12 @@ function EditorPanel({
             <span>
               Line {cursorPosition.line}, Column {cursorPosition.column}
             </span>
-            <div id="vim-status-bar" className="text-primary font-bold">
-              NORMAL
+            <div
+              id="vim-status-bar"
+              className="text-primary font-bold"
+              style={{ opacity: "0.5" }}
+            >
+              DISABLED
             </div>
           </div>
           <span>{ledgerContent.split("\n").length} lines</span>
