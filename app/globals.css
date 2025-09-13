@@ -216,3 +216,31 @@
 .syntax-comment {
   color: var(--syntax-comment);
 }
+
+/* Custom scrollbar for editor to match ScrollArea styling */
+.editor-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: var(--muted-foreground) transparent;
+}
+
+.editor-scrollbar::-webkit-scrollbar {
+  width: 8px;
+}
+
+.editor-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.editor-scrollbar::-webkit-scrollbar-thumb {
+  background-color: var(--muted-foreground);
+  border-radius: 4px;
+  opacity: 0.3;
+}
+
+.editor-scrollbar::-webkit-scrollbar-thumb:hover {
+  opacity: 0.5;
+}
+
+.editor-scrollbar::-webkit-scrollbar-corner {
+  background: transparent;
+}

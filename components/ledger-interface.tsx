@@ -706,7 +706,7 @@ function EditorPanel({
             setLedgerContent(e.target.value);
             setIsModified(true);
           }}
-          className="w-full h-full p-4 font-mono text-sm bg-transparent border-none resize-none focus:outline-none focus:ring-0 overflow-y-auto"
+          className="w-full h-full p-4 font-mono text-sm bg-transparent border-none resize-none focus:outline-none focus:ring-0 overflow-y-auto editor-scrollbar"
           style={{
             lineHeight: "1.5",
             tabSize: 4,
