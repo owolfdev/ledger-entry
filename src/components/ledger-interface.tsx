@@ -88,9 +88,6 @@ export default function LedgerInterface() {
   const [isModified, setIsModified] = useState(false);
   const [cursorPosition, setCursorPosition] = useState({ line: 1, column: 1 });
   const [isEditorLoading, setIsEditorLoading] = useState(true);
-  const [vimMode, setVimMode] = useState<"normal" | "insert" | "visual">(
-    "normal"
-  );
 
   // Panel visibility state
   const [showTerminal, setShowTerminal] = useState(true);
@@ -494,8 +491,6 @@ export default function LedgerInterface() {
                 isEditorLoading={isEditorLoading}
                 setIsEditorLoading={setIsEditorLoading}
                 vimModeRef={vimModeRef}
-                vimMode={vimMode}
-                setVimMode={setVimMode}
               />
             </Panel>
           </PanelGroup>
@@ -531,8 +526,6 @@ export default function LedgerInterface() {
               isEditorLoading={isEditorLoading}
               setIsEditorLoading={setIsEditorLoading}
               vimModeRef={vimModeRef}
-              vimMode={vimMode}
-              setVimMode={setVimMode}
             />
           </div>
         ) : (
@@ -666,8 +659,6 @@ function EditorPanel({
   isEditorLoading,
   setIsEditorLoading,
   vimModeRef,
-  vimMode,
-  setVimMode,
 }: {
   fileName: string;
   isModified: boolean;
@@ -680,8 +671,6 @@ function EditorPanel({
   isEditorLoading: boolean;
   setIsEditorLoading: (loading: boolean) => void;
   vimModeRef: React.RefObject<any>;
-  vimMode: "normal" | "insert" | "visual";
-  setVimMode: (mode: "normal" | "insert" | "visual") => void;
 }) {
   return (
     <div className="h-full flex flex-col editor">
@@ -787,102 +776,31 @@ function EditorPanel({
             // Set the language to ledger
             monaco.editor.setModelLanguage(editor.getModel()!, "ledger");
 
-            // Initialize custom Vim mode
+            // Initialize Vim mode using monaco-vim (same as working implementation)
             setTimeout(() => {
-              console.log("Initializing custom Vim mode...");
+              console.log("Initializing monaco-vim...");
 
-              // Disable Monaco's default keybindings to prevent conflicts
-              editor.updateOptions({
-                quickSuggestions: false,
-                suggestOnTriggerCharacters: false,
-                acceptSuggestionOnEnter: "off",
-                wordBasedSuggestions: "off",
-                parameterHints: { enabled: false },
-                hover: { enabled: false },
-                tabCompletion: "off",
-                snippetSuggestions: "none",
-              });
+              // Create status bar element for Vim mode
+              const vimStatusBar = document.getElementById("vim-status-bar");
+              if (!vimStatusBar) {
+                console.error("Vim status bar element not found!");
+                return;
+              }
 
-              // Add Vim mode switching commands (only when not in insert mode)
-              editor.addCommand(monaco.KeyCode.KeyI, () => {
-                if (vimMode === "normal" || vimMode === "visual") {
-                  console.log("Pressed 'i' - entering insert mode");
-                  setVimMode("insert");
-                }
-              });
-
-              editor.addCommand(monaco.KeyCode.Escape, () => {
-                console.log("Pressed 'Esc' - entering normal mode");
-                setVimMode("normal");
-              });
-
-              editor.addCommand(monaco.KeyCode.KeyA, () => {
-                if (vimMode === "normal" || vimMode === "visual") {
-                  console.log(
-                    "Pressed 'a' - entering insert mode after cursor"
-                  );
-                  setVimMode("insert");
-                }
-              });
-
-              editor.addCommand(monaco.KeyCode.KeyO, () => {
-                if (vimMode === "normal" || vimMode === "visual") {
-                  console.log("Pressed 'o' - entering insert mode on new line");
-                  editor.trigger(
-                    "keyboard",
-                    "editor.action.insertLineAfter",
-                    {}
-                  );
-                  setVimMode("insert");
-                }
-              });
-
-              editor.addCommand(monaco.KeyCode.KeyV, () => {
-                if (vimMode === "normal") {
-                  console.log("Pressed 'v' - entering visual mode");
-                  setVimMode("visual");
-                }
-              });
-
-              // Navigation commands (only work in normal/visual mode)
-              editor.addCommand(monaco.KeyCode.KeyH, () => {
-                if (vimMode === "normal" || vimMode === "visual") {
-                  editor.trigger("keyboard", "cursorLeft", {});
-                }
-              });
-
-              editor.addCommand(monaco.KeyCode.KeyJ, () => {
-                if (vimMode === "normal" || vimMode === "visual") {
-                  editor.trigger("keyboard", "cursorDown", {});
-                }
-              });
-
-              editor.addCommand(monaco.KeyCode.KeyK, () => {
-                if (vimMode === "normal" || vimMode === "visual") {
-                  editor.trigger("keyboard", "cursorUp", {});
-                }
-              });
-
-              editor.addCommand(monaco.KeyCode.KeyL, () => {
-                if (vimMode === "normal" || vimMode === "visual") {
-                  editor.trigger("keyboard", "cursorRight", {});
-                }
-              });
-
-              // Delete line command (dd in Vim)
-              editor.addCommand(
-                monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyD,
-                () => {
-                  if (vimMode === "normal") {
-                    editor.trigger("keyboard", "editor.action.deleteLines", {});
+              // Dynamically import monaco-vim to avoid SSR issues
+              import("monaco-vim")
+                .then((vim) => {
+                  try {
+                    const vimMode = vim.initVimMode(editor, vimStatusBar);
+                    (vimModeRef as any).current = vimMode;
+                    console.log("monaco-vim initialized successfully!");
+                  } catch (error) {
+                    console.error("Failed to initialize monaco-vim:", error);
                   }
-                }
-              );
-
-              console.log("Custom Vim mode initialized successfully!");
-              console.log(
-                "Available commands: i (insert), Esc (normal), a (append), o (new line), v (visual), h/j/k/l (navigation)"
-              );
+                })
+                .catch((error) => {
+                  console.error("Failed to load monaco-vim:", error);
+                });
             }, 500);
 
             // Track cursor position changes
@@ -953,8 +871,8 @@ function EditorPanel({
             <span>
               Line {cursorPosition.line}, Column {cursorPosition.column}
             </span>
-            <div className="text-primary font-bold">
-              {vimMode.toUpperCase()}
+            <div id="vim-status-bar" className="text-primary font-bold">
+              NORMAL
             </div>
           </div>
           <span>{ledgerContent.split("\n").length} lines</span>
