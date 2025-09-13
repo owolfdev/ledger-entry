@@ -287,18 +287,18 @@ export default function LedgerInterface() {
         <Panel defaultSize={40} minSize={25} maxSize={75}>
           <div className="h-full flex flex-col">
             {/* Status Output Terminal - Top */}
-            <div className="flex-1 terminal border-b border-gray-600 flex flex-col min-h-0">
-              <div className="p-3 border-b border-gray-600 bg-gray-800 flex-shrink-0">
+            <div className="flex-1 terminal border-b border-border flex flex-col min-h-0">
+              <div className="p-3 border-b border-border bg-card flex-shrink-0">
                 <div className="flex items-center gap-2">
-                  <Terminal className="w-4 h-4 text-green-400" />
-                  <span className="text-sm font-mono text-green-400">
+                  <Terminal className="w-4 h-4 text-muted-foreground" />
+                  <span className="text-sm font-mono text-muted-foreground">
                     Terminal Output
                   </span>
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={() => setLogs([])}
-                    className="ml-auto text-gray-400 hover:text-white"
+                    className="ml-auto text-muted-foreground hover:text-foreground"
                   >
                     <Clear className="w-3 h-3" />
                   </Button>
@@ -317,11 +317,11 @@ export default function LedgerInterface() {
             </div>
 
             {/* Command Input Terminal - Bottom */}
-            <div className="min-h-20 terminal border-t border-gray-600 flex-shrink-0">
+            <div className="min-h-20 terminal border-t border-border flex-shrink-0">
               <div className="p-3 flex flex-col">
                 <div className="flex items-center gap-2 mb-2">
-                  <Play className="w-3 h-3 text-green-400" />
-                  <span className="text-xs text-green-400 font-mono">
+                  <Play className="w-3 h-3 text-muted-foreground" />
+                  <span className="text-xs text-muted-foreground font-mono">
                     Command Input
                   </span>
                   {commandHistory.length > 0 && (
@@ -332,7 +332,7 @@ export default function LedgerInterface() {
                   )}
                 </div>
                 <div className="flex items-start gap-2 font-mono">
-                  <span className="text-green-400 mt-1">$</span>
+                  <span className="text-muted-foreground mt-1">$</span>
                   <textarea
                     ref={commandInputRef}
                     value={command}

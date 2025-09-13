@@ -4,44 +4,44 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  /* Updated color tokens for professional terminal/accounting interface */
+  /* Monochrome color tokens for clean interface */
   --background: #f8fafc; /* Light background for editor panel */
   --foreground: #374151; /* Dark text for readability */
   --card: #ffffff; /* Card background */
   --card-foreground: #374151; /* Card text */
   --popover: #ffffff; /* Popover background */
   --popover-foreground: #374151; /* Popover text */
-  --primary: #6366f1; /* Primary accent color */
+  --primary: #374151; /* Primary accent color - monochrome */
   --primary-foreground: #ffffff; /* Text on primary */
   --secondary: #f1f5f9; /* Secondary elements */
   --secondary-foreground: #374151; /* Text on secondary */
   --muted: #64748b; /* Muted elements */
   --muted-foreground: #94a3b8; /* Muted text */
-  --accent: #6366f1; /* Accent elements */
+  --accent: #374151; /* Accent elements - monochrome */
   --accent-foreground: #ffffff; /* Text on accent */
-  --destructive: #dc2626; /* Error/destructive */
+  --destructive: #374151; /* Error/destructive - monochrome */
   --destructive-foreground: #ffffff; /* Text on destructive */
   --border: #e2e8f0; /* Borders */
   --input: #ffffff; /* Input backgrounds */
-  --ring: #6366f1; /* Focus rings */
+  --ring: #374151; /* Focus rings - monochrome */
 
-  /* Terminal-specific colors */
+  /* Terminal-specific colors - KEEP COLORED */
   --terminal-bg: #1a1a1a; /* Dark terminal background */
   --terminal-fg: #ffffff; /* Terminal text */
-  --terminal-success: #22c55e; /* Success messages */
-  --terminal-error: #ef4444; /* Error messages */
-  --terminal-warning: #f59e0b; /* Warning messages */
-  --terminal-info: #3b82f6; /* Info messages */
-  --terminal-cursor: #00ff00; /* Terminal cursor */
+  --terminal-success: #22c55e; /* Success messages - KEEP GREEN */
+  --terminal-error: #ef4444; /* Error messages - KEEP RED */
+  --terminal-warning: #f59e0b; /* Warning messages - KEEP YELLOW */
+  --terminal-info: #3b82f6; /* Info messages - KEEP BLUE */
+  --terminal-cursor: #00ff00; /* Terminal cursor - KEEP GREEN */
 
-  /* Editor-specific colors */
+  /* Editor-specific colors - monochrome */
   --editor-bg: #ffffff; /* Light editor background */
   --editor-fg: #374151; /* Editor text */
   --editor-line-number: #94a3b8; /* Line numbers */
-  --editor-selection: #ddd6fe; /* Selection highlight */
+  --editor-selection: #e2e8f0; /* Selection highlight - monochrome */
   --editor-current-line: #f8fafc; /* Current line highlight */
 
-  /* Syntax highlighting */
+  /* Syntax highlighting - KEEP COLORED for terminal output */
   --syntax-date: #3b82f6; /* Dates in blue */
   --syntax-account: #7c3aed; /* Account names in purple */
   --syntax-amount-positive: #22c55e; /* Positive amounts in green */
@@ -65,38 +65,63 @@
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.145 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.145 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.985 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.396 0.141 25.723);
-  --destructive-foreground: oklch(0.637 0.237 25.331);
-  --border: oklch(0.269 0 0);
-  --input: oklch(0.269 0 0);
-  --ring: oklch(0.439 0 0);
+  /* Dark mode monochrome colors */
+  --background: #0a0a0a; /* Very dark background */
+  --foreground: #e5e5e5; /* Light text */
+  --card: #1a1a1a; /* Dark card background */
+  --card-foreground: #e5e5e5; /* Light card text */
+  --popover: #1a1a1a; /* Dark popover background */
+  --popover-foreground: #e5e5e5; /* Light popover text */
+  --primary: #e5e5e5; /* Light primary */
+  --primary-foreground: #0a0a0a; /* Dark text on primary */
+  --secondary: #262626; /* Dark secondary */
+  --secondary-foreground: #e5e5e5; /* Light text on secondary */
+  --muted: #404040; /* Muted elements */
+  --muted-foreground: #a3a3a3; /* Muted text */
+  --accent: #262626; /* Dark accent */
+  --accent-foreground: #e5e5e5; /* Light text on accent */
+  --destructive: #e5e5e5; /* Light destructive */
+  --destructive-foreground: #0a0a0a; /* Dark text on destructive */
+  --border: #404040; /* Dark borders */
+  --input: #1a1a1a; /* Dark input backgrounds */
+  --ring: #737373; /* Light ring */
+
+  /* Terminal colors remain the same - KEEP COLORED */
+  --terminal-bg: #1a1a1a;
+  --terminal-fg: #ffffff;
+  --terminal-success: #22c55e; /* KEEP GREEN */
+  --terminal-error: #ef4444; /* KEEP RED */
+  --terminal-warning: #f59e0b; /* KEEP YELLOW */
+  --terminal-info: #3b82f6; /* KEEP BLUE */
+  --terminal-cursor: #00ff00; /* KEEP GREEN */
+
+  /* Editor colors for dark mode - match terminal */
+  --editor-bg: #1a1a1a; /* Match terminal background */
+  --editor-fg: #e5e5e5; /* Light editor text */
+  --editor-line-number: #737373; /* Muted line numbers */
+  --editor-selection: #404040; /* Dark selection */
+  --editor-current-line: #262626; /* Slightly lighter than background */
+
+  /* Syntax highlighting remains colored - KEEP COLORED */
+  --syntax-date: #3b82f6; /* KEEP BLUE */
+  --syntax-account: #7c3aed; /* KEEP PURPLE */
+  --syntax-amount-positive: #22c55e; /* KEEP GREEN */
+  --syntax-amount-negative: #ef4444; /* KEEP RED */
+  --syntax-comment: #737373; /* KEEP GRAY */
+
   --chart-1: oklch(0.488 0.243 264.376);
   --chart-2: oklch(0.696 0.17 162.48);
   --chart-3: oklch(0.769 0.188 70.08);
   --chart-4: oklch(0.627 0.265 303.9);
   --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(0.269 0 0);
-  --sidebar-ring: oklch(0.439 0 0);
+  --sidebar: #1a1a1a;
+  --sidebar-foreground: #e5e5e5;
+  --sidebar-primary: #e5e5e5; /* Light sidebar primary */
+  --sidebar-primary-foreground: #0a0a0a;
+  --sidebar-accent: #262626;
+  --sidebar-accent-foreground: #e5e5e5;
+  --sidebar-border: #404040;
+  --sidebar-ring: #737373;
 }
 
 @theme inline {
