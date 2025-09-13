@@ -244,3 +244,25 @@
 .editor-scrollbar::-webkit-scrollbar-corner {
   background: transparent;
 }
+
+/* Monaco Editor dark theme fixes */
+.monaco-editor {
+  background-color: var(--editor-bg) !important;
+}
+
+.monaco-editor .view-overlay {
+  background-color: var(--editor-bg) !important;
+}
+
+.monaco-editor .margin {
+  background-color: var(--editor-bg) !important;
+}
+
+.monaco-editor .inputarea {
+  background-color: var(--editor-bg) !important;
+}
+
+/* Prevent Monaco Editor from showing light theme initially */
+.monaco-editor.vs-dark {
+  background-color: var(--editor-bg) !important;
+}

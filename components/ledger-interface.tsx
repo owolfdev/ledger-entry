@@ -3,6 +3,7 @@
 import type React from "react";
 
 import { useState, useRef, useEffect } from "react";
+import Editor from "@monaco-editor/react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -71,6 +72,7 @@ export default function LedgerInterface() {
   const [fileName, setFileName] = useState("main.ledger");
   const [isModified, setIsModified] = useState(false);
   const [cursorPosition, setCursorPosition] = useState({ line: 1, column: 1 });
+  const [isEditorLoading, setIsEditorLoading] = useState(true);
 
   // Panel visibility state
   const [showTerminal, setShowTerminal] = useState(true);
@@ -87,7 +89,7 @@ export default function LedgerInterface() {
 
   const commandInputRef = useRef<HTMLTextAreaElement>(null);
   const logsEndRef = useRef<HTMLDivElement>(null);
-  const editorRef = useRef<HTMLTextAreaElement>(null);
+  const editorRef = useRef<any>(null);
 
   // Auto-scroll logs to bottom
   useEffect(() => {
@@ -366,47 +368,6 @@ export default function LedgerInterface() {
     );
   };
 
-  const highlightSyntax = (text: string) => {
-    return text.split("\n").map((line, index) => {
-      let highlightedLine = line;
-
-      // Date highlighting
-      highlightedLine = highlightedLine.replace(
-        /(\d{4}\/\d{2}\/\d{2})/g,
-        '<span class="syntax-date">$1</span>'
-      );
-
-      // Account names
-      highlightedLine = highlightedLine.replace(
-        /^(\s+)([A-Za-z][A-Za-z0-9:]+)/gm,
-        '$1<span class="syntax-account">$2</span>'
-      );
-
-      // Amounts
-      highlightedLine = highlightedLine.replace(
-        /\$[\d,]+\.\d{2}/g,
-        '<span class="syntax-amount-positive">$&</span>'
-      );
-
-      // Comments
-      highlightedLine = highlightedLine.replace(
-        /^(\s*);(.*)$/gm,
-        '<span class="syntax-comment">$&</span>'
-      );
-
-      return (
-        <div key={index} className="flex">
-          <span className="text-gray-400 text-xs w-8 text-right mr-3 select-none">
-            {index + 1}
-          </span>
-          <span
-            dangerouslySetInnerHTML={{ __html: highlightedLine || "&nbsp;" }}
-          />
-        </div>
-      );
-    });
-  };
-
   return (
     <div className="h-screen bg-background flex flex-col">
       {/* Top Toggle Bar */}
@@ -501,6 +462,9 @@ export default function LedgerInterface() {
                 editorRef={editorRef}
                 setLedgerContent={setLedgerContent}
                 setIsModified={setIsModified}
+                setCursorPosition={setCursorPosition}
+                isEditorLoading={isEditorLoading}
+                setIsEditorLoading={setIsEditorLoading}
               />
             </Panel>
           </PanelGroup>
@@ -532,6 +496,9 @@ export default function LedgerInterface() {
               editorRef={editorRef}
               setLedgerContent={setLedgerContent}
               setIsModified={setIsModified}
+              setCursorPosition={setCursorPosition}
+              isEditorLoading={isEditorLoading}
+              setIsEditorLoading={setIsEditorLoading}
             />
           </div>
         ) : (
@@ -661,14 +628,20 @@ function EditorPanel({
   editorRef,
   setLedgerContent,
   setIsModified,
+  setCursorPosition,
+  isEditorLoading,
+  setIsEditorLoading,
 }: {
   fileName: string;
   isModified: boolean;
   ledgerContent: string;
   cursorPosition: { line: number; column: number };
-  editorRef: React.RefObject<HTMLTextAreaElement>;
+  editorRef: React.RefObject<any>;
   setLedgerContent: (content: string) => void;
   setIsModified: (modified: boolean) => void;
+  setCursorPosition: (position: { line: number; column: number }) => void;
+  isEditorLoading: boolean;
+  setIsEditorLoading: (loading: boolean) => void;
 }) {
   return (
     <div className="h-full flex flex-col editor">
@@ -698,26 +671,123 @@ function EditorPanel({
       </div>
 
       {/* Code Editor */}
-      <div className="flex-1 overflow-hidden">
-        <textarea
-          ref={editorRef}
+      <div className="flex-1 overflow-hidden relative bg-background">
+        {isEditorLoading && (
+          <div className="absolute inset-0 flex items-center justify-center bg-background/80 z-10">
+            <div className="flex flex-col items-center gap-2">
+              <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+              <span className="text-sm text-muted-foreground">
+                Loading editor...
+              </span>
+            </div>
+          </div>
+        )}
+        <Editor
+          height="100%"
+          defaultLanguage="ledger"
           value={ledgerContent}
-          onChange={(e) => {
-            setLedgerContent(e.target.value);
-            setIsModified(true);
+          onChange={(value) => {
+            if (value !== undefined) {
+              setLedgerContent(value);
+              setIsModified(true);
+            }
           }}
-          className="w-full h-full p-4 font-mono text-sm bg-transparent border-none resize-none focus:outline-none focus:ring-0 overflow-y-auto editor-scrollbar"
-          style={{
-            lineHeight: "1.5",
+          beforeMount={(monaco) => {
+            // Set dark theme immediately to prevent flicker
+            monaco.editor.setTheme("vs-dark");
+
+            // Define ledger language
+            monaco.languages.register({ id: "ledger" });
+
+            // Configure ledger language
+            monaco.languages.setMonarchTokensProvider("ledger", {
+              tokenizer: {
+                root: [
+                  // Comments
+                  [/^(\s*);.*$/, "comment"],
+                  // Dates (YYYY/MM/DD format)
+                  [/\d{4}\/\d{2}\/\d{2}/, "keyword"],
+                  // Account names (indented with spaces/tabs)
+                  [/^(\s+)([A-Za-z][A-Za-z0-9:]*)/, ["", "string"]],
+                  // Amounts (starting with $)
+                  [/\$[\d,]+\.\d{2}/, "number"],
+                  // Whitespace
+                  [/\s+/, "white"],
+                  // Everything else
+                  [/./, "identifier"],
+                ],
+              },
+            });
+          }}
+          onMount={(editor, monaco) => {
+            // Store the editor instance for future use
+            if (editorRef.current) {
+              (editorRef.current as any) = editor;
+            }
+
+            // Ensure dark theme is applied
+            monaco.editor.setTheme("vs-dark");
+
+            // Set the language to ledger
+            monaco.editor.setModelLanguage(editor.getModel()!, "ledger");
+
+            // Track cursor position changes
+            editor.onDidChangeCursorPosition((e) => {
+              setCursorPosition({
+                line: e.position.lineNumber,
+                column: e.position.column,
+              });
+            });
+
+            // Editor is now loaded
+            setIsEditorLoading(false);
+          }}
+          loading={
+            <div className="flex items-center justify-center h-full">
+              <div className="flex flex-col items-center gap-2">
+                <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                <span className="text-sm text-muted-foreground">
+                  Loading Monaco Editor...
+                </span>
+              </div>
+            </div>
+          }
+          options={{
+            fontSize: 14,
+            fontFamily:
+              "'Fira Code', 'Monaco', 'Menlo', 'Ubuntu Mono', monospace",
+            lineNumbers: "on",
+            minimap: { enabled: false },
+            scrollBeyondLastLine: false,
+            wordWrap: "on",
+            automaticLayout: true,
             tabSize: 4,
-            whiteSpace: "pre",
+            insertSpaces: true,
+            renderWhitespace: "selection",
+            bracketPairColorization: { enabled: true },
+            theme: "vs-dark",
+            // Performance optimizations
+            scrollbar: {
+              vertical: "auto",
+              horizontal: "auto",
+              verticalScrollbarSize: 12,
+              horizontalScrollbarSize: 12,
+            },
+            smoothScrolling: true,
+            cursorBlinking: "blink",
+            cursorSmoothCaretAnimation: "on",
+            // Reduce features for faster loading
+            suggestOnTriggerCharacters: false,
+            quickSuggestions: false,
+            parameterHints: { enabled: false },
+            hover: { enabled: false },
+            contextmenu: false,
+            // Disable features we don't need for ledger files
+            folding: false,
+            find: { addExtraSpaceOnTop: false },
+            links: false,
           }}
         />
-
-        {/* Syntax highlighting overlay */}
-        <div className="absolute inset-0 p-4 pointer-events-none font-mono text-sm leading-6 whitespace-pre">
-          {/* This would be replaced with a proper syntax highlighter in production */}
-        </div>
       </div>
 
       {/* Status Bar */}
