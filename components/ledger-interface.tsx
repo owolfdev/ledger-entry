@@ -4,6 +4,8 @@ import type React from "react";
 
 import { useState, useRef, useEffect } from "react";
 import Editor from "@monaco-editor/react";
+// @ts-ignore - monaco-vim doesn't have TypeScript definitions
+import { initVimMode } from "monaco-vim";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -90,6 +92,7 @@ export default function LedgerInterface() {
   const commandInputRef = useRef<HTMLTextAreaElement>(null);
   const logsEndRef = useRef<HTMLDivElement>(null);
   const editorRef = useRef<any>(null);
+  const vimModeRef = useRef<any>(null);
 
   // Auto-scroll logs to bottom
   useEffect(() => {
@@ -121,6 +124,15 @@ export default function LedgerInterface() {
     checkMobile();
     window.addEventListener("resize", checkMobile);
     return () => window.removeEventListener("resize", checkMobile);
+  }, []);
+
+  // Cleanup Vim mode on unmount
+  useEffect(() => {
+    return () => {
+      if (vimModeRef.current) {
+        vimModeRef.current.dispose();
+      }
+    };
   }, []);
 
   // Panel toggle functions
@@ -465,6 +477,7 @@ export default function LedgerInterface() {
                 setCursorPosition={setCursorPosition}
                 isEditorLoading={isEditorLoading}
                 setIsEditorLoading={setIsEditorLoading}
+                vimModeRef={vimModeRef}
               />
             </Panel>
           </PanelGroup>
@@ -499,6 +512,7 @@ export default function LedgerInterface() {
               setCursorPosition={setCursorPosition}
               isEditorLoading={isEditorLoading}
               setIsEditorLoading={setIsEditorLoading}
+              vimModeRef={vimModeRef}
             />
           </div>
         ) : (
@@ -631,6 +645,7 @@ function EditorPanel({
   setCursorPosition,
   isEditorLoading,
   setIsEditorLoading,
+  vimModeRef,
 }: {
   fileName: string;
   isModified: boolean;
@@ -642,6 +657,7 @@ function EditorPanel({
   setCursorPosition: (position: { line: number; column: number }) => void;
   isEditorLoading: boolean;
   setIsEditorLoading: (loading: boolean) => void;
+  vimModeRef: React.RefObject<any>;
 }) {
   return (
     <div className="h-full flex flex-col editor">
@@ -731,6 +747,16 @@ function EditorPanel({
             // Set the language to ledger
             monaco.editor.setModelLanguage(editor.getModel()!, "ledger");
 
+            // Initialize Vim mode
+            try {
+              (vimModeRef as any).current = initVimMode(
+                editor,
+                document.getElementById("vim-status-bar")
+              );
+            } catch (error) {
+              console.warn("Failed to initialize Vim mode:", error);
+            }
+
             // Track cursor position changes
             editor.onDidChangeCursorPosition((e) => {
               setCursorPosition({
@@ -792,10 +818,13 @@ function EditorPanel({
 
       {/* Status Bar */}
       <div className="p-2 border-t border-border bg-secondary/30 text-xs text-muted-foreground font-mono flex-shrink-0">
-        <div className="flex justify-between">
-          <span>
-            Line {cursorPosition.line}, Column {cursorPosition.column}
-          </span>
+        <div className="flex justify-between items-center">
+          <div className="flex items-center gap-4">
+            <span>
+              Line {cursorPosition.line}, Column {cursorPosition.column}
+            </span>
+            <div id="vim-status-bar" className="text-primary font-bold" />
+          </div>
           <span>{ledgerContent.split("\n").length} lines</span>
         </div>
       </div>
