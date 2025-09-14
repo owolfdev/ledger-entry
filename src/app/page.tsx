@@ -2,8 +2,8 @@ import LedgerInterface from "@/src/components/ledger-interface";
 
 export default function Home() {
   return (
-    <main className="h-screen w-full overflow-hidden">
+    <div className="h-[calc(100vh-4rem)] w-full overflow-hidden">
       <LedgerInterface />
-    </main>
+    </div>
   );
 }

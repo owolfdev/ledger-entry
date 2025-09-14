@@ -23,7 +23,7 @@ import type React from "react";
 
 import { useState, useRef, useEffect } from "react";
 import dynamic from "next/dynamic";
-import { useSettings } from "../hooks/use-settings";
+import { useLayout } from "@/src/contexts/layout-context";
 
 // Dynamically import Monaco Editor to avoid SSR issues
 const Editor = dynamic(() => import("@monaco-editor/react"), {
@@ -53,8 +53,6 @@ import {
   GripVertical,
   Eye,
   EyeOff,
-  Monitor,
-  Smartphone,
 } from "lucide-react";
 
 interface LogMessage {
@@ -103,9 +101,7 @@ export default function LedgerInterface() {
   const [isEditorLoading, setIsEditorLoading] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
 
-  // User settings
-  const { settings, updateSettings, isLoaded, getMobileDefaults } =
-    useSettings();
+  // Layout settings
   const {
     showTerminal,
     showEditor,
@@ -113,7 +109,9 @@ export default function LedgerInterface() {
     terminalSize,
     editorSize,
     splitterRatio,
-  } = settings;
+    updateSettings,
+    isLoaded,
+  } = useLayout();
 
   // Message area state
   const [message, setMessage] = useState(
@@ -207,36 +205,16 @@ export default function LedgerInterface() {
     }
   }, []);
 
-  // Mobile detection (only update if user hasn't interacted yet AND settings are loaded)
+  // Mobile detection
   useEffect(() => {
-    if (!isLoaded) return; // Wait for settings to load first
-
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 768);
-
-      // Only apply defaults if user hasn't interacted with settings
-      if (!settings.hasUserInteracted) {
-        if (window.innerWidth < 768) {
-          // On mobile, start with both panels visible
-          updateSettings({ showTerminal: true, showEditor: true });
-        } else {
-          // On desktop, start with terminal only (cycling system)
-          updateSettings({ showTerminal: true, showEditor: false });
-        }
-      }
     };
 
     checkMobile();
     window.addEventListener("resize", checkMobile);
     return () => window.removeEventListener("resize", checkMobile);
-  }, [
-    isLoaded,
-    settings.hasUserInteracted,
-    updateSettings,
-    settings.showTerminal,
-    settings.showEditor,
-    settings.vimModeEnabled,
-  ]);
+  }, []);
 
   // Cleanup Vim mode on unmount
   useEffect(() => {
@@ -246,50 +224,6 @@ export default function LedgerInterface() {
       }
     };
   }, []);
-
-  // Panel toggle functions
-  const toggleTerminal = () => {
-    if (isMobile) {
-      // Mobile: simple toggle between terminal and editor
-      updateSettings({ showTerminal: true, showEditor: false });
-    } else {
-      // Desktop: individual toggle
-      updateSettings({ showTerminal: !showTerminal });
-    }
-  };
-
-  const toggleEditor = () => {
-    if (isMobile) {
-      // Mobile: simple toggle between terminal and editor
-      updateSettings({ showTerminal: false, showEditor: true });
-    } else {
-      // Desktop: individual toggle
-      updateSettings({ showEditor: !showEditor });
-    }
-  };
-
-  const toggleBoth = () => {
-    if (isMobile) {
-      // Mobile: simple toggle between terminal and editor
-      if (showTerminal) {
-        updateSettings({ showTerminal: false, showEditor: true });
-      } else {
-        updateSettings({ showTerminal: true, showEditor: false });
-      }
-    } else {
-      // Desktop: cycle through: terminal only -> editor only -> both -> terminal only
-      if (showTerminal && !showEditor) {
-        // Currently showing terminal only, switch to editor only
-        updateSettings({ showTerminal: false, showEditor: true });
-      } else if (!showTerminal && showEditor) {
-        // Currently showing editor only, switch to both
-        updateSettings({ showTerminal: true, showEditor: true });
-      } else if (showTerminal && showEditor) {
-        // Currently showing both, switch to terminal only
-        updateSettings({ showTerminal: true, showEditor: false });
-      }
-    }
-  };
 
   const updateMessage = (
     text: string,
@@ -489,59 +423,7 @@ export default function LedgerInterface() {
   }
 
   return (
-    <div className="h-screen bg-background flex flex-col">
-      {/* Top Toggle Bar */}
-      <div className="flex items-center justify-between p-2 border-b border-border bg-card">
-        <div className="flex items-center gap-2">
-          <Button
-            variant={showTerminal ? "default" : "outline"}
-            size="sm"
-            onClick={toggleTerminal}
-            className="flex items-center gap-2"
-          >
-            <Terminal className="w-4 h-4" />
-            Terminal
-          </Button>
-          <Button
-            variant={showEditor ? "default" : "outline"}
-            size="sm"
-            onClick={toggleEditor}
-            className="flex items-center gap-2"
-          >
-            <FileText className="w-4 h-4" />
-            Editor
-          </Button>
-        </div>
-
-        <div className="flex items-center gap-2">
-          {isMobile ? (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={toggleBoth}
-              className="flex items-center gap-2"
-            >
-              <Smartphone className="w-4 h-4" />
-              {showTerminal ? "Switch to Editor" : "Switch to Terminal"}
-            </Button>
-          ) : (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={toggleBoth}
-              className="flex items-center gap-2"
-            >
-              <Monitor className="w-4 h-4" />
-              {showTerminal && !showEditor
-                ? "Switch to Editor"
-                : !showTerminal && showEditor
-                ? "Show Both"
-                : "Switch to Terminal"}
-            </Button>
-          )}
-        </div>
-      </div>
-
+    <div className="h-full bg-background flex flex-col">
       {/* Main Content Area */}
       <div className="flex-1 overflow-hidden">
         {showTerminal && showEditor ? (

@@ -2,6 +2,9 @@ import type { Metadata } from "next";
 import { GeistSans } from "geist/font/sans";
 import { GeistMono } from "geist/font/mono";
 import { Analytics } from "@vercel/analytics/next";
+import { AuthButton } from "@/src/components/auth-button";
+import { LayoutToggles } from "@/src/components/layout-toggles";
+import { LayoutProvider } from "@/src/contexts/layout-context";
 import "../styles/globals.css";
 
 export const metadata: Metadata = {
@@ -19,7 +22,23 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark">
       <body className={`font-sans ${GeistSans.variable} ${GeistMono.variable}`}>
-        {children}
+        <LayoutProvider>
+          <div className="min-h-screen flex flex-col">
+            {/* Header with Layout Toggles and Auth Button */}
+            <header className="border-b border-border bg-card/50 backdrop-blur supports-[backdrop-filter]:bg-card/50">
+              <div className="container mx-auto px-4 py-3 flex justify-between items-center">
+                <div className="flex items-center gap-4">
+                  <h1 className="text-xl font-bold">Ledger Entry</h1>
+                  <LayoutToggles />
+                </div>
+                <AuthButton />
+              </div>
+            </header>
+
+            {/* Main Content */}
+            <main className="flex-1">{children}</main>
+          </div>
+        </LayoutProvider>
         <Analytics />
       </body>
     </html>
