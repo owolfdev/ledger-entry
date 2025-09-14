@@ -23,6 +23,7 @@ import type React from "react";
 
 import { useState, useRef, useEffect } from "react";
 import dynamic from "next/dynamic";
+import { useSettings } from "../hooks/use-settings";
 
 // Dynamically import Monaco Editor to avoid SSR issues
 const Editor = dynamic(() => import("@monaco-editor/react"), {
@@ -76,14 +77,7 @@ export default function LedgerInterface() {
   const [command, setCommand] = useState("");
   const [commandHistory, setCommandHistory] = useState<string[]>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
-  const [logs, setLogs] = useState<LogMessage[]>([
-    {
-      id: "1",
-      type: "info",
-      message: "Ledger CLI Interface initialized",
-      timestamp: new Date(),
-    },
-  ]);
+  const [logs, setLogs] = useState<LogMessage[]>([]);
   const [ledgerContent, setLedgerContent] = useState(`; Sample Ledger File
 ; This is a comment
 
@@ -107,12 +101,19 @@ export default function LedgerInterface() {
   const [isModified, setIsModified] = useState(false);
   const [cursorPosition, setCursorPosition] = useState({ line: 1, column: 1 });
   const [isEditorLoading, setIsEditorLoading] = useState(true);
-  const [isVimModeEnabled, setIsVimModeEnabled] = useState(false);
-
-  // Panel visibility state
-  const [showTerminal, setShowTerminal] = useState(true);
-  const [showEditor, setShowEditor] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
+
+  // User settings
+  const { settings, updateSettings, isLoaded, getMobileDefaults } =
+    useSettings();
+  const {
+    showTerminal,
+    showEditor,
+    vimModeEnabled,
+    terminalSize,
+    editorSize,
+    splitterRatio,
+  } = settings;
 
   // Message area state
   const [message, setMessage] = useState(
@@ -127,16 +128,32 @@ export default function LedgerInterface() {
   const editorRef = useRef<any>(null);
   const vimModeRef = useRef<any>(null);
 
+  // Add log function (defined early so it can be used in useEffect)
+  const addLog = (type: LogMessage["type"], message: string) => {
+    const newLog: LogMessage = {
+      id: typeof window !== "undefined" ? Date.now().toString() : "",
+      type,
+      message,
+      timestamp: typeof window !== "undefined" ? new Date() : new Date(0), // Use epoch for SSR
+    };
+    setLogs((prev) => [...prev, newLog]);
+  };
+
+  // Add initial log message on client side only
+  useEffect(() => {
+    addLog("info", "Ledger CLI Interface initialized");
+  }, []);
+
   // Toggle Vim mode on/off
   const toggleVimMode = () => {
-    console.log("Toggle Vim mode clicked! Current state:", isVimModeEnabled);
+    console.log("Toggle Vim mode clicked! Current state:", vimModeEnabled);
 
     if (!editorRef.current) {
       console.log("No editor ref, cannot toggle");
       return;
     }
 
-    if (isVimModeEnabled) {
+    if (vimModeEnabled) {
       // Disable Vim mode
       console.log("Disabling Vim mode...");
       if (vimModeRef.current) {
@@ -148,7 +165,7 @@ export default function LedgerInterface() {
         vimStatusBar.textContent = "DISABLED";
         vimStatusBar.style.opacity = "0.5";
       }
-      setIsVimModeEnabled(false);
+      updateSettings({ vimModeEnabled: false });
     } else {
       // Enable Vim mode
       console.log("Enabling Vim mode...");
@@ -165,7 +182,7 @@ export default function LedgerInterface() {
             if (editorRef.current && vimStatusBar) {
               const vimMode = vim.initVimMode(editorRef.current, vimStatusBar);
               vimModeRef.current = vimMode;
-              setIsVimModeEnabled(true);
+              updateSettings({ vimModeEnabled: true });
               console.log("Vim mode enabled successfully");
             }
           } catch (error) {
@@ -190,25 +207,36 @@ export default function LedgerInterface() {
     }
   }, []);
 
-  // Mobile detection
+  // Mobile detection (only update if user hasn't interacted yet AND settings are loaded)
   useEffect(() => {
+    if (!isLoaded) return; // Wait for settings to load first
+
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 768);
-      if (window.innerWidth < 768) {
-        // On mobile, start with terminal only
-        setShowTerminal(true);
-        setShowEditor(false);
-      } else {
-        // On desktop, start with terminal only (cycling system)
-        setShowTerminal(true);
-        setShowEditor(false);
+
+      // Only apply defaults if user hasn't interacted with settings
+      if (!settings.hasUserInteracted) {
+        if (window.innerWidth < 768) {
+          // On mobile, start with both panels visible
+          updateSettings({ showTerminal: true, showEditor: true });
+        } else {
+          // On desktop, start with terminal only (cycling system)
+          updateSettings({ showTerminal: true, showEditor: false });
+        }
       }
     };
 
     checkMobile();
     window.addEventListener("resize", checkMobile);
     return () => window.removeEventListener("resize", checkMobile);
-  }, []);
+  }, [
+    isLoaded,
+    settings.hasUserInteracted,
+    updateSettings,
+    settings.showTerminal,
+    settings.showEditor,
+    settings.vimModeEnabled,
+  ]);
 
   // Cleanup Vim mode on unmount
   useEffect(() => {
@@ -223,22 +251,20 @@ export default function LedgerInterface() {
   const toggleTerminal = () => {
     if (isMobile) {
       // Mobile: simple toggle between terminal and editor
-      setShowTerminal(true);
-      setShowEditor(false);
+      updateSettings({ showTerminal: true, showEditor: false });
     } else {
       // Desktop: individual toggle
-      setShowTerminal(!showTerminal);
+      updateSettings({ showTerminal: !showTerminal });
     }
   };
 
   const toggleEditor = () => {
     if (isMobile) {
       // Mobile: simple toggle between terminal and editor
-      setShowTerminal(false);
-      setShowEditor(true);
+      updateSettings({ showTerminal: false, showEditor: true });
     } else {
       // Desktop: individual toggle
-      setShowEditor(!showEditor);
+      updateSettings({ showEditor: !showEditor });
     }
   };
 
@@ -246,38 +272,23 @@ export default function LedgerInterface() {
     if (isMobile) {
       // Mobile: simple toggle between terminal and editor
       if (showTerminal) {
-        setShowTerminal(false);
-        setShowEditor(true);
+        updateSettings({ showTerminal: false, showEditor: true });
       } else {
-        setShowTerminal(true);
-        setShowEditor(false);
+        updateSettings({ showTerminal: true, showEditor: false });
       }
     } else {
       // Desktop: cycle through: terminal only -> editor only -> both -> terminal only
       if (showTerminal && !showEditor) {
         // Currently showing terminal only, switch to editor only
-        setShowTerminal(false);
-        setShowEditor(true);
+        updateSettings({ showTerminal: false, showEditor: true });
       } else if (!showTerminal && showEditor) {
         // Currently showing editor only, switch to both
-        setShowTerminal(true);
-        setShowEditor(true);
+        updateSettings({ showTerminal: true, showEditor: true });
       } else if (showTerminal && showEditor) {
         // Currently showing both, switch to terminal only
-        setShowTerminal(true);
-        setShowEditor(false);
+        updateSettings({ showTerminal: true, showEditor: false });
       }
     }
-  };
-
-  const addLog = (type: LogMessage["type"], message: string) => {
-    const newLog: LogMessage = {
-      id: Date.now().toString(),
-      type,
-      message,
-      timestamp: new Date(),
-    };
-    setLogs((prev) => [...prev, newLog]);
   };
 
   const updateMessage = (
@@ -332,10 +343,11 @@ export default function LedgerInterface() {
       case "add":
         if (parts[1] === "transaction") {
           addLog("success", "Transaction template added to editor");
-          const template = `\n\n${new Date()
-            .toISOString()
-            .split("T")[0]
-            .replace(/-/g, "/")} * Description
+          const template = `\n\n${
+            typeof window !== "undefined"
+              ? new Date().toISOString().split("T")[0].replace(/-/g, "/")
+              : "2024/01/18"
+          } * Description
     Account:Name                 $0.00
     Assets:Checking`;
           setLedgerContent((prev) => prev + template);
@@ -464,6 +476,18 @@ export default function LedgerInterface() {
     );
   };
 
+  // Don't render until settings are loaded to prevent flickering
+  if (!isLoaded) {
+    return (
+      <div className="h-screen w-full flex items-center justify-center bg-background">
+        <div className="flex flex-col items-center gap-2">
+          <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+          <span className="text-sm text-muted-foreground">Loading...</span>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="h-screen bg-background flex flex-col">
       {/* Top Toggle Bar */}
@@ -522,9 +546,19 @@ export default function LedgerInterface() {
       <div className="flex-1 overflow-hidden">
         {showTerminal && showEditor ? (
           // Both panels visible - use resizable panels
-          <PanelGroup direction="horizontal" className="h-full">
+          <PanelGroup
+            direction="horizontal"
+            className="h-full"
+            onLayout={(sizes) => {
+              // Save the splitter ratio when user drags it
+              if (sizes.length >= 2) {
+                const newRatio = sizes[0] / 100; // Convert percentage to ratio (0.0 to 1.0)
+                updateSettings({ splitterRatio: newRatio });
+              }
+            }}
+          >
             {/* Left Panel - Terminal */}
-            <Panel defaultSize={40} minSize={25} maxSize={75}>
+            <Panel defaultSize={splitterRatio * 100} minSize={25} maxSize={75}>
               <TerminalPanel
                 logs={logs}
                 command={command}
@@ -549,7 +583,11 @@ export default function LedgerInterface() {
             </PanelResizeHandle>
 
             {/* Right Panel - Editor */}
-            <Panel defaultSize={60} minSize={25} maxSize={75}>
+            <Panel
+              defaultSize={(1 - splitterRatio) * 100}
+              minSize={25}
+              maxSize={75}
+            >
               <EditorPanel
                 fileName={fileName}
                 isModified={isModified}
@@ -562,7 +600,7 @@ export default function LedgerInterface() {
                 isEditorLoading={isEditorLoading}
                 setIsEditorLoading={setIsEditorLoading}
                 vimModeRef={vimModeRef}
-                isVimModeEnabled={isVimModeEnabled}
+                vimModeEnabled={vimModeEnabled}
                 toggleVimMode={toggleVimMode}
               />
             </Panel>
@@ -599,7 +637,7 @@ export default function LedgerInterface() {
               isEditorLoading={isEditorLoading}
               setIsEditorLoading={setIsEditorLoading}
               vimModeRef={vimModeRef}
-              isVimModeEnabled={isVimModeEnabled}
+              vimModeEnabled={vimModeEnabled}
               toggleVimMode={toggleVimMode}
             />
           </div>
@@ -734,7 +772,7 @@ function EditorPanel({
   isEditorLoading,
   setIsEditorLoading,
   vimModeRef,
-  isVimModeEnabled,
+  vimModeEnabled,
   toggleVimMode,
 }: {
   fileName: string;
@@ -748,7 +786,7 @@ function EditorPanel({
   isEditorLoading: boolean;
   setIsEditorLoading: (loading: boolean) => void;
   vimModeRef: React.RefObject<any>;
-  isVimModeEnabled: boolean;
+  vimModeEnabled: boolean;
   toggleVimMode: () => void;
 }) {
   return (
@@ -767,16 +805,16 @@ function EditorPanel({
           </div>
           <div className="flex items-center gap-2">
             <Button
-              variant={isVimModeEnabled ? "default" : "outline"}
+              variant={vimModeEnabled ? "default" : "outline"}
               size="sm"
               onClick={toggleVimMode}
               className={
-                isVimModeEnabled
+                vimModeEnabled
                   ? "bg-green-600 hover:bg-green-700 text-white border-green-600"
                   : ""
               }
             >
-              {isVimModeEnabled ? "Vim ON" : "Vim OFF"}
+              {vimModeEnabled ? "Vim ON" : "Vim OFF"}
             </Button>
             <Button
               variant="outline"
@@ -851,7 +889,7 @@ function EditorPanel({
 
             // Initialize Vim mode using monaco-vim (same as working implementation)
             setTimeout(() => {
-              if (!isVimModeEnabled) return;
+              if (!vimModeEnabled) return;
 
               console.log("Initializing monaco-vim...");
 
@@ -949,9 +987,9 @@ function EditorPanel({
             <div
               id="vim-status-bar"
               className="text-primary font-bold"
-              style={{ opacity: "0.5" }}
+              style={{ opacity: vimModeEnabled ? "1" : "0.5" }}
             >
-              DISABLED
+              {vimModeEnabled ? "NORMAL" : "DISABLED"}
             </div>
           </div>
           <span>{ledgerContent.split("\n").length} lines</span>
