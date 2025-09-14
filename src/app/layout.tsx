@@ -5,9 +5,9 @@ import { Analytics } from "@vercel/analytics/next";
 import "../styles/globals.css";
 
 export const metadata: Metadata = {
-  title: "Ledger CLI Interface",
+  title: "Ledger Entry",
   description:
-    "A modern web interface for Ledger CLI with Monaco Editor and Vim support",
+    "A natural language interface for Ledger that makes it easy to use ledger remotely and on mobile devices",
   generator: "Next.js 15",
 };
 

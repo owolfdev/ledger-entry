@@ -48,7 +48,7 @@ import {
   FileText,
   Terminal,
   Play,
-  CableCar as Clear,
+  Trash2 as Clear,
   History,
   GripVertical,
   Eye,
