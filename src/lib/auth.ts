@@ -11,6 +11,10 @@ export interface User {
 }
 
 export const signInWithGitHub = async () => {
+  if (!supabase) {
+    throw new Error("Supabase client is not initialized");
+  }
+
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: "github",
     options: {
@@ -27,6 +31,10 @@ export const signInWithGitHub = async () => {
 };
 
 export const signOut = async () => {
+  if (!supabase) {
+    throw new Error("Supabase client is not initialized");
+  }
+
   const { error } = await supabase.auth.signOut();
 
   if (error) {
@@ -35,6 +43,11 @@ export const signOut = async () => {
 };
 
 export const getCurrentUser = async (): Promise<User | null> => {
+  if (!supabase) {
+    console.warn("Supabase client is not initialized");
+    return null;
+  }
+
   const {
     data: { user },
     error,
@@ -49,6 +62,11 @@ export const getCurrentUser = async (): Promise<User | null> => {
 };
 
 export const onAuthStateChange = (callback: (user: User | null) => void) => {
+  if (!supabase) {
+    console.warn("Supabase client is not initialized");
+    return { data: { subscription: { unsubscribe: () => {} } } };
+  }
+
   return supabase.auth.onAuthStateChange((event, session) => {
     callback(session?.user as User | null);
   });
