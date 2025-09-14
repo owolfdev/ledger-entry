@@ -2,7 +2,17 @@ import Link from "next/link";
 import { Button } from "@/src/components/ui/button";
 import { AlertCircle } from "lucide-react";
 
-export default function AuthCodeError() {
+interface AuthCodeErrorProps {
+  searchParams: {
+    error?: string;
+  };
+}
+
+export default function AuthCodeError({ searchParams }: AuthCodeErrorProps) {
+  const errorMessage =
+    searchParams.error ||
+    "There was an error signing you in with GitHub. Please try again.";
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-background">
       <div className="max-w-md w-full space-y-8 p-8">
@@ -11,9 +21,7 @@ export default function AuthCodeError() {
           <h2 className="mt-6 text-2xl font-bold text-foreground">
             Authentication Error
           </h2>
-          <p className="mt-2 text-sm text-muted-foreground">
-            There was an error signing you in with GitHub. Please try again.
-          </p>
+          <p className="mt-2 text-sm text-muted-foreground">{errorMessage}</p>
         </div>
 
         <div className="space-y-4">
