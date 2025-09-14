@@ -9,10 +9,17 @@ export function useAuth() {
 
   useEffect(() => {
     // Get initial user
-    getCurrentUser().then((user) => {
-      setUser(user);
-      setLoading(false);
-    });
+    getCurrentUser()
+      .then((user) => {
+        setUser(user);
+        setLoading(false);
+      })
+      .catch((error) => {
+        console.warn("Error getting current user:", error);
+        // Don't treat auth session missing as an error
+        setUser(null);
+        setLoading(false);
+      });
 
     // Listen for auth changes
     const {

@@ -48,17 +48,26 @@ export const getCurrentUser = async (): Promise<User | null> => {
     return null;
   }
 
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser();
+  try {
+    const {
+      data: { user },
+      error,
+    } = await supabase.auth.getUser();
 
-  if (error) {
-    console.error("Error getting current user:", error);
+    if (error) {
+      // Don't log AuthSessionMissingError as an error - it's normal when not logged in
+      if (error.message.includes("Auth session missing")) {
+        return null;
+      }
+      console.error("Error getting current user:", error);
+      return null;
+    }
+
+    return user as User | null;
+  } catch (error) {
+    console.warn("Error getting current user:", error);
     return null;
   }
-
-  return user as User | null;
 };
 
 export const onAuthStateChange = (callback: (user: User | null) => void) => {
