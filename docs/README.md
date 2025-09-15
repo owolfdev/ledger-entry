@@ -7,6 +7,7 @@ This directory contains all project documentation. Start here to discover the ap
 - [High-level Spec](./SPEC_FOR_LEDGER_APP.md)
 - [Accounts Spec](./SPEC_FOR_ACCOUNTS.md)
 - [Step-by-step Implementation Plan](./STEP-BY-STEP_IMPLEMENTATION.md)
+- [Interface Guide](./INTERFACE_GUIDE.md)
 - [Keyboard Shortcuts](./KEYBOARD_SHORTCUTS.md)
 - [Auth Setup](./AUTH_SETUP.md)
 - [GitHub Auth Setup](./GITHUB_AUTH_SETUP.md)

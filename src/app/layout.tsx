@@ -5,6 +5,7 @@ import { Analytics } from "@vercel/analytics/next";
 import { AuthButton } from "@/src/components/auth-button";
 import { LayoutToggles } from "@/src/components/layout-toggles";
 import { LayoutProvider } from "@/src/contexts/layout-context";
+import { MobileNav } from "@/src/components/mobile-nav";
 import Link from "next/link";
 import "../styles/globals.css";
 
@@ -28,8 +29,14 @@ export default function RootLayout({
             {/* Header with Layout Toggles and Auth Button */}
             <header className="border-b border-border bg-card/50 backdrop-blur supports-[backdrop-filter]:bg-card/50">
               <div className="px-6 py-3 flex items-center">
-                <div className="flex items-center gap-6">
-                  <h1 className="text-xl font-bold">Ledger Entry</h1>
+                {/* Desktop Navigation */}
+                <div className="hidden md:flex items-baseline gap-6">
+                  <Link
+                    href="/"
+                    className="text-xl font-bold hover:text-primary transition-colors"
+                  >
+                    Ledger Entry
+                  </Link>
                   <Link
                     href="/docs"
                     className="text-sm text-muted-foreground hover:text-foreground transition-colors"
@@ -37,6 +44,19 @@ export default function RootLayout({
                     Docs
                   </Link>
                 </div>
+
+                {/* Mobile Navigation */}
+                <div className="md:hidden flex items-center gap-4">
+                  <Link
+                    href="/"
+                    className="text-xl font-bold hover:text-primary transition-colors"
+                  >
+                    Ledger Entry
+                  </Link>
+                  <MobileNav />
+                </div>
+
+                {/* Right Side Controls */}
                 <div className="ml-auto flex items-center gap-4">
                   <LayoutToggles />
                   <AuthButton />
