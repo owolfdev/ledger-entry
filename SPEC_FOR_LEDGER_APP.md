@@ -417,3 +417,122 @@ alias kbank  = Personal:Assets:Bank:KBank:Checking
 
 **Bottom line:**
 Ledger Entry is a GitHub-backed, plain-text, multi-lingual, multi-currency ledger system with a natural-language input layer and a cloud-based Ledger CLI runner. The spec above gives you the entire architecture, file formats, and user flow to start building confidently.
+
+---
+
+## 🔹 Storage at GitHub (Journal + Rules)
+
+### 1. **Each User Has Their Own Private Repo**
+
+- Created automatically by the app using their PAT (or user can point to an existing repo).
+- Repo contains **all financial data and rules** — nothing stored on your servers beyond the encrypted PAT.
+
+---
+
+### 2. **File Structure**
+
+```
+my-ledger/             ← user’s GitHub repo
+├─ main.journal        ← root file with !include lines
+├─ accounts.journal    ← chart of accounts + aliases
+├─ entries/            ← one file per month of transactions
+│  ├─ 2025-09.journal
+│  ├─ 2025-10.journal
+│  └─ ...
+└─ rules/              ← JSON rules with precedence
+   ├─ 00-base.json
+   ├─ 10-templates.json
+   ├─ 20-user.json
+   └─ 30-learned.json
+```
+
+---
+
+### 3. **Journal Files**
+
+- **`main.journal`**
+  Lists includes. Ledger CLI is always run against this file:
+
+  ```
+  !include accounts.journal
+  !include entries/2025-09.journal
+  ```
+
+- **`accounts.journal`**
+  Predefines accounts and aliases; also optional Ledger rules.
+
+- **`entries/YYYY-MM.journal`**
+  App appends each new entry here (one per month or year).
+  On save, app fetches the file via GitHub API, appends text, and commits with a clear commit message.
+
+---
+
+### 4. **Rules Files**
+
+- **`rules/00-base.json`**
+  Global defaults shipped by app (read-only).
+
+- **`rules/10-templates.json`**
+  Locale/business starter pack selected at signup (read-only).
+
+- **`rules/20-user.json`**
+  User-editable rules from the Rules Config Page.
+
+- **`rules/30-learned.json`**
+  Auto-learned rules appended by the app based on confirmations; user can promote or disable.
+
+**Precedence:** `30-learned` > `20-user` > `10-templates` > `00-base`.
+
+---
+
+### 5. **GitHub Commit Workflow**
+
+- App uses **GitHub Contents API**:
+
+  - `GET /repos/:owner/:repo/contents/:path` to get `sha`.
+  - Modify or append file locally.
+  - `PUT /repos/:owner/:repo/contents/:path` with `sha` and commit message.
+
+- Commit messages examples:
+
+  - `entry: 2025/09/09 Starbucks — Personal (THB 100)`
+  - `rules: update user rules`
+  - `bootstrap: add starter ledger files`
+
+- If file doesn’t exist (new month), app **creates** it and **updates `main.journal`** with a new `!include` line.
+
+---
+
+### 6. **Token Safety**
+
+- PAT stored **server-side encrypted** (Supabase DB + KMS).
+- Only backend fetches from GitHub using decrypted PAT.
+- Ledger Runner receives **files payload only**, never PAT.
+
+---
+
+### 7. **Migration of Existing Files**
+
+- If user already has Ledger files:
+
+  - App connects to their repo using PAT.
+  - Lets them pick a `main.journal` or equivalent.
+  - Compatibility mode (use as-is) or organize mode (PR to adopt our structure).
+
+---
+
+### 8. **Key Principles**
+
+- **Human-readable, Git-diffable** text files.
+- **One source of truth** per user — their GitHub repo.
+- **No database mirror** in Phase-0 — everything pulled live from GitHub on demand.
+
+---
+
+So the spec does clearly say:
+
+- **Where** journal files and rules live (in the user’s own GitHub repo),
+- **How** they’re structured,
+- **How** your app reads/writes them via the GitHub API,
+- **How** precedence and rules files work,
+- **How** security is handled with PAT vaulting.
