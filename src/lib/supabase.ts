@@ -1,3 +1,4 @@
+import { createBrowserClient } from "@supabase/ssr";
 import { createClient } from "@supabase/supabase-js";
 
 let supabaseClient: ReturnType<typeof createClient> | null = null;
@@ -18,7 +19,7 @@ export const supabase = (() => {
       return null as any;
     }
 
-    supabaseClient = createClient(supabaseUrl, supabaseAnonKey);
+    supabaseClient = createBrowserClient(supabaseUrl, supabaseAnonKey);
   }
 
   return supabaseClient;
