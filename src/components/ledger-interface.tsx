@@ -125,6 +125,7 @@ export default function LedgerInterface() {
   const logsEndRef = useRef<HTMLDivElement>(null);
   const editorRef = useRef<any>(null);
   const vimModeRef = useRef<any>(null);
+  const lastFocusedRef = useRef<"editor" | "terminal">("terminal");
 
   // Add log function (defined early so it can be used in useEffect)
   const addLog = (type: LogMessage["type"], message: string) => {
@@ -224,6 +225,69 @@ export default function LedgerInterface() {
       }
     };
   }, []);
+
+  // Helper: focus editor and ensure it is visible
+  const focusEditor = () => {
+    if (!showEditor) {
+      updateSettings({ showEditor: true });
+    }
+    // Give layout a tick to render if it was hidden
+    setTimeout(() => {
+      if (editorRef.current && typeof editorRef.current.focus === "function") {
+        editorRef.current.focus();
+        lastFocusedRef.current = "editor";
+      }
+    }, 0);
+  };
+
+  // Helper: focus terminal input and ensure it is visible
+  const focusTerminal = () => {
+    if (!showTerminal) {
+      updateSettings({ showTerminal: true });
+    }
+    setTimeout(() => {
+      if (commandInputRef.current) {
+        commandInputRef.current.focus();
+        lastFocusedRef.current = "terminal";
+      }
+    }, 0);
+  };
+
+  // Global keyboard shortcuts for quick panel focus/toggling
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      const isMod = e.metaKey || e.ctrlKey;
+      if (!isMod || !e.shiftKey) return;
+
+      // Cmd/Ctrl+Shift+E → focus Editor
+      if (e.key.toLowerCase() === "e") {
+        e.preventDefault();
+        focusEditor();
+        return;
+      }
+
+      // Cmd/Ctrl+Shift+T → focus Terminal
+      if (e.key.toLowerCase() === "t") {
+        e.preventDefault();
+        focusTerminal();
+        return;
+      }
+
+      // Cmd/Ctrl+Shift+` → toggle focus between Editor and Terminal
+      if (e.key === "`") {
+        e.preventDefault();
+        if (lastFocusedRef.current === "editor") {
+          focusTerminal();
+        } else {
+          focusEditor();
+        }
+        return;
+      }
+    };
+
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [showEditor, showTerminal]);
 
   const updateMessage = (
     text: string,
@@ -484,6 +548,9 @@ export default function LedgerInterface() {
                 vimModeRef={vimModeRef}
                 vimModeEnabled={vimModeEnabled}
                 toggleVimMode={toggleVimMode}
+                onEditorFocused={() => {
+                  lastFocusedRef.current = "editor";
+                }}
               />
             </Panel>
           </PanelGroup>
@@ -521,6 +588,9 @@ export default function LedgerInterface() {
               vimModeRef={vimModeRef}
               vimModeEnabled={vimModeEnabled}
               toggleVimMode={toggleVimMode}
+              onEditorFocused={() => {
+                lastFocusedRef.current = "editor";
+              }}
             />
           </div>
         ) : (
@@ -656,6 +726,7 @@ function EditorPanel({
   vimModeRef,
   vimModeEnabled,
   toggleVimMode,
+  onEditorFocused,
 }: {
   fileName: string;
   isModified: boolean;
@@ -670,6 +741,7 @@ function EditorPanel({
   vimModeRef: React.RefObject<any>;
   vimModeEnabled: boolean;
   toggleVimMode: () => void;
+  onEditorFocused: () => void;
 }) {
   return (
     <div className="h-full flex flex-col editor">
@@ -804,6 +876,11 @@ function EditorPanel({
                 line: e.position.lineNumber,
                 column: e.position.column,
               });
+            });
+
+            // Track focus changes for toggle shortcut
+            editor.onDidFocusEditorText?.(() => {
+              onEditorFocused();
             });
 
             // Editor is now loaded
