@@ -2,7 +2,7 @@
 
 import { Button } from "@/src/components/ui/button";
 import { useLayout } from "@/src/contexts/layout-context";
-import { Terminal, FileText, Monitor } from "lucide-react";
+import { Terminal, FileText } from "lucide-react";
 
 export function LayoutToggles() {
   const { showTerminal, showEditor, updateSettings, isLoaded } = useLayout();
@@ -18,25 +18,22 @@ export function LayoutToggles() {
   }
 
   const toggleTerminal = () => {
+    // Prevent turning off terminal if editor is already off
+    if (showTerminal && !showEditor) {
+      return; // Don't allow turning off terminal when editor is off
+    }
     updateSettings({ showTerminal: !showTerminal });
   };
 
   const toggleEditor = () => {
+    // Prevent turning off editor if terminal is already off
+    if (showEditor && !showTerminal) {
+      return; // Don't allow turning off editor when terminal is off
+    }
     updateSettings({ showEditor: !showEditor });
   };
 
-  const toggleBoth = () => {
-    if (showTerminal && !showEditor) {
-      // Currently showing terminal only, switch to editor only
-      updateSettings({ showTerminal: false, showEditor: true });
-    } else if (!showTerminal && showEditor) {
-      // Currently showing editor only, switch to both
-      updateSettings({ showTerminal: true, showEditor: true });
-    } else if (showTerminal && showEditor) {
-      // Currently showing both, switch to terminal only
-      updateSettings({ showTerminal: true, showEditor: false });
-    }
-  };
+  // Removed cycle toggle to reduce redundancy; two explicit toggles suffice
 
   return (
     <div className="flex items-center gap-1">
@@ -62,22 +59,7 @@ export function LayoutToggles() {
         <FileText className="w-4 h-4" />
       </Button>
 
-      {/* Cycle Toggle */}
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={toggleBoth}
-        className="h-8 w-8 p-0"
-        title={
-          showTerminal && !showEditor
-            ? "Switch to Editor"
-            : !showTerminal && showEditor
-            ? "Show Both"
-            : "Switch to Terminal"
-        }
-      >
-        <Monitor className="w-4 h-4" />
-      </Button>
+      {/* Cycle Toggle removed */}
     </div>
   );
 }

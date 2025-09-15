@@ -26,12 +26,12 @@ export default function RootLayout({
           <div className="min-h-screen flex flex-col">
             {/* Header with Layout Toggles and Auth Button */}
             <header className="border-b border-border bg-card/50 backdrop-blur supports-[backdrop-filter]:bg-card/50">
-              <div className="container mx-auto px-4 py-3 flex justify-between items-center">
-                <div className="flex items-center gap-4">
-                  <h1 className="text-xl font-bold">Ledger Entry</h1>
+              <div className="px-6 py-3 flex items-center">
+                <h1 className="text-xl font-bold">Ledger Entry</h1>
+                <div className="ml-auto flex items-center gap-4">
                   <LayoutToggles />
+                  <AuthButton />
                 </div>
-                <AuthButton />
               </div>
             </header>
 
