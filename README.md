@@ -34,3 +34,5 @@ A natural language interface for Ledger that makes it easy to use ledger remotel
 - Tailwind CSS
 - Monaco Editor
 - Radix UI Components
+
+tab between panels
