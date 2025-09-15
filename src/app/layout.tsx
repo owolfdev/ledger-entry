@@ -47,13 +47,13 @@ export default function RootLayout({
 
                 {/* Mobile Navigation */}
                 <div className="md:hidden flex items-center gap-4">
+                  <MobileNav />
                   <Link
                     href="/"
                     className="text-xl font-bold hover:text-primary transition-colors"
                   >
                     Ledger Entry
                   </Link>
-                  <MobileNav />
                 </div>
 
                 {/* Right Side Controls */}
