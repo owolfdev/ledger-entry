@@ -11,10 +11,9 @@ export async function GET(request: NextRequest) {
   const hash = url.hash;
 
   if (hash && hash.includes("access_token")) {
-    // This is an implicit flow response - redirect to main app
-    // The client-side auth will handle the token
-    console.log("Implicit flow detected, redirecting to main app");
-    return NextResponse.redirect(`${origin}${next}`);
+    // This is an implicit flow response - redirect to client-side handler
+    console.log("Implicit flow detected, redirecting to client-side handler");
+    return NextResponse.redirect(`${origin}/auth/implicit-callback`);
   }
 
   if (code) {
