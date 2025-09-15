@@ -19,11 +19,7 @@ export const supabase = (() => {
       return null as any;
     }
 
-    supabaseClient = createBrowserClient(supabaseUrl, supabaseAnonKey, {
-      auth: {
-        flowType: 'pkce',
-      },
-    });
+    supabaseClient = createBrowserClient(supabaseUrl, supabaseAnonKey);
   }
 
   return supabaseClient;
@@ -39,9 +35,5 @@ export const createServerClient = () => {
     throw new Error("Supabase environment variables are not set");
   }
 
-  return createClient(supabaseUrl, supabaseAnonKey, {
-    auth: {
-      flowType: 'pkce',
-    },
-  });
+  return createClient(supabaseUrl, supabaseAnonKey);
 };
