@@ -161,7 +161,7 @@ export default function LedgerInterface() {
       }
       const vimStatusBar = document.getElementById("vim-status-bar");
       if (vimStatusBar) {
-        vimStatusBar.textContent = "DISABLED";
+        vimStatusBar.textContent = "";
         vimStatusBar.style.opacity = "0.5";
       }
       updateSettings({ vimModeEnabled: false });
@@ -171,7 +171,7 @@ export default function LedgerInterface() {
       const vimStatusBar = document.getElementById("vim-status-bar");
       if (vimStatusBar) {
         vimStatusBar.style.opacity = "1";
-        vimStatusBar.textContent = "NORMAL";
+        vimStatusBar.textContent = "";
       }
 
       // Initialize Vim mode
@@ -948,7 +948,7 @@ function EditorPanel({
               className="text-primary font-bold"
               style={{ opacity: vimModeEnabled ? "1" : "0.5" }}
             >
-              {vimModeEnabled ? "NORMAL" : "DISABLED"}
+              {/* Content will be managed by monaco-vim */}
             </div>
           </div>
           <span>{ledgerContent.split("\n").length} lines</span>
