@@ -5,6 +5,7 @@ import { Analytics } from "@vercel/analytics/next";
 import { AuthButton } from "@/src/components/auth-button";
 import { LayoutToggles } from "@/src/components/layout-toggles";
 import { LayoutProvider } from "@/src/contexts/layout-context";
+import Link from "next/link";
 import "../styles/globals.css";
 
 export const metadata: Metadata = {
@@ -27,7 +28,15 @@ export default function RootLayout({
             {/* Header with Layout Toggles and Auth Button */}
             <header className="border-b border-border bg-card/50 backdrop-blur supports-[backdrop-filter]:bg-card/50">
               <div className="px-6 py-3 flex items-center">
-                <h1 className="text-xl font-bold">Ledger Entry</h1>
+                <div className="flex items-center gap-6">
+                  <h1 className="text-xl font-bold">Ledger Entry</h1>
+                  <Link
+                    href="/docs"
+                    className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    Docs
+                  </Link>
+                </div>
                 <div className="ml-auto flex items-center gap-4">
                   <LayoutToggles />
                   <AuthButton />
