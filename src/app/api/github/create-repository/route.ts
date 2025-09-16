@@ -136,7 +136,7 @@ export async function POST(request: NextRequest) {
 
     // Check if it's a GitHub API error
     if (error && typeof error === "object" && "status" in error) {
-      const githubError = error as any;
+      const githubError = error as { status: number };
       if (githubError.status === 422) {
         // Repository name already exists
         return NextResponse.json(

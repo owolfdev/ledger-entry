@@ -320,7 +320,7 @@ export class GitHubClient {
         };
       }
       return null;
-    } catch (error) {
+    } catch {
       // File doesn't exist
       return null;
     }
@@ -349,7 +349,7 @@ export class GitHubClient {
         }));
       }
       return [];
-    } catch (error) {
+    } catch {
       // Directory doesn't exist
       return [];
     }

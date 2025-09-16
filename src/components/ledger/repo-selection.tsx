@@ -9,7 +9,6 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { RepoStatusCard } from "./repo-status-card";
 import { CreateRepoForm } from "./create-repo-form";
 import { RepoInfo } from "@/lib/ledger/repo-scanner";
@@ -26,7 +25,6 @@ export function RepoSelection({ onRepoConnected }: RepoSelectionProps) {
   const [selectedRepo, setSelectedRepo] = useState<RepoInfo | null>(null);
   const [mode, setMode] = useState<SelectionMode>("select");
   const [isLoading, setIsLoading] = useState(false);
-  const [isConnecting, setIsConnecting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const fetchRepos = async () => {
@@ -51,7 +49,6 @@ export function RepoSelection({ onRepoConnected }: RepoSelectionProps) {
 
   const handleConnectRepo = async (repo: RepoInfo) => {
     try {
-      setIsConnecting(true);
       setError(null);
 
       const response = await fetch("/api/ledger/connect", {
@@ -77,7 +74,7 @@ export function RepoSelection({ onRepoConnected }: RepoSelectionProps) {
       console.error("Error connecting repository:", err);
       setError(err instanceof Error ? err.message : "Unknown error");
     } finally {
-      setIsConnecting(false);
+      // Connection completed
     }
   };
 
@@ -85,13 +82,23 @@ export function RepoSelection({ onRepoConnected }: RepoSelectionProps) {
     setMode("create");
   };
 
-  const handleRepoCreated = (repo: any) => {
+  const handleRepoCreated = (repo: {
+    id: number;
+    name: string;
+    full_name: string;
+    description?: string;
+    private: boolean;
+    html_url: string;
+    clone_url: string;
+    default_branch: string;
+    permissions: { admin: boolean; push: boolean; pull: boolean };
+  }) => {
     // Convert the created repo to RepoInfo format
     const repoInfo: RepoInfo = {
       id: repo.id,
       name: repo.name,
       full_name: repo.full_name,
-      description: repo.description,
+      description: repo.description || null,
       private: repo.private,
       html_url: repo.html_url,
       clone_url: repo.clone_url,

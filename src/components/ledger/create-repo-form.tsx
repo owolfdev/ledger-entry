@@ -16,7 +16,17 @@ import {
 import { Plus, RefreshCw, ArrowLeft } from "lucide-react";
 
 interface CreateRepoFormProps {
-  onRepoCreated?: (repo: any) => void;
+  onRepoCreated?: (repo: {
+    id: number;
+    name: string;
+    full_name: string;
+    description?: string;
+    private: boolean;
+    html_url: string;
+    clone_url: string;
+    default_branch: string;
+    permissions: { admin: boolean; push: boolean; pull: boolean };
+  }) => void;
   onCancel?: () => void;
 }
 
@@ -67,7 +77,7 @@ export function CreateRepoForm({
     }
   };
 
-  const handleInputChange = (field: string, value: any) => {
+  const handleInputChange = (field: string, value: string | boolean) => {
     setFormData((prev) => ({
       ...prev,
       [field]: value,
