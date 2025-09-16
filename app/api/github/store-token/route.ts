@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { storeGitHubToken } from "@/lib/github/token-handler";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(request: NextRequest) {
@@ -7,6 +8,14 @@ export async function POST(request: NextRequest) {
 
     if (!token) {
       return NextResponse.json({ error: "Token is required" }, { status: 400 });
+    }
+
+    // Validate token format (GitHub PATs start with ghp_, gho_, ghu_, ghs_, or ghr_)
+    if (!token.match(/^gh[psou]_/)) {
+      return NextResponse.json(
+        { error: "Invalid GitHub token format" },
+        { status: 400 }
+      );
     }
 
     const supabase = await createClient();
@@ -22,23 +31,20 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Store the token in user metadata
-    const { error: updateError } = await supabase.auth.updateUser({
-      data: {
-        github_token: token,
-        provider_token: token,
-      },
-    });
+    // Store the token securely in the database
+    const success = await storeGitHubToken(user.id, token);
 
-    if (updateError) {
-      console.error("Error storing GitHub token:", updateError);
+    if (!success) {
       return NextResponse.json(
-        { error: "Failed to store token" },
+        { error: "Failed to store token securely" },
         { status: 500 }
       );
     }
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({
+      success: true,
+      message: "GitHub token stored securely",
+    });
   } catch (error) {
     console.error("Error in store-token API:", error);
     return NextResponse.json(
