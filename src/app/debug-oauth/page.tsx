@@ -125,8 +125,8 @@ export default function DebugOAuthPage() {
                   {oauthUrl}
                 </div>
                 <p className="text-xs text-muted-foreground mt-2">
-                  You can copy this URL and test it manually, or use the "Test
-                  OAuth URL" button.
+                  You can copy this URL and test it manually, or use the
+                  &quot;Test OAuth URL&quot; button.
                 </p>
               </div>
             )}
@@ -171,7 +171,7 @@ export default function DebugOAuthPage() {
 
             <div className="mt-4 p-4 bg-red-50 dark:bg-red-950 rounded-md">
               <h4 className="font-semibold mb-2 text-red-800 dark:text-red-200">
-                "Error getting user profile from external provider"
+                &quot;Error getting user profile from external provider&quot;
                 Troubleshooting:
               </h4>
               <ul className="text-sm space-y-1 text-red-700 dark:text-red-300">

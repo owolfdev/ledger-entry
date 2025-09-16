@@ -1,4 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import Link from "next/link";
 
 export default async function Page({
   searchParams,
@@ -31,8 +32,8 @@ export default async function Page({
                       Error: {params.error}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      This usually means the OAuth callback didn't receive the
-                      expected authorization code.
+                      This usually means the OAuth callback didn&apos;t receive
+                      the expected authorization code.
                     </p>
                     <p className="text-xs text-muted-foreground">
                       Check that the redirect URL is properly configured in
@@ -46,9 +47,9 @@ export default async function Page({
                 </p>
               )}
               <div className="pt-4">
-                <a href="/" className="text-sm text-primary hover:underline">
+                <Link href="/" className="text-sm text-primary hover:underline">
                   ← Back to home
-                </a>
+                </Link>
               </div>
             </CardContent>
           </Card>
