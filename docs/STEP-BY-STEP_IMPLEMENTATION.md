@@ -8,10 +8,13 @@
 - ✅ Basic ledger file editing with syntax highlighting
 - ✅ Terminal interface with mock commands
 - ✅ Vim mode support and responsive UI
-- ❌ No backend infrastructure
-- ❌ No GitHub integration
-- ❌ No natural language processing
-- ❌ No rules engine
+- ✅ Supabase authentication infrastructure
+- ✅ GitHub OAuth authentication (sign up/sign in working)
+- ✅ User profile management with GitHub data
+- ❌ GitHub PAT collection and vaulting
+- ❌ GitHub repository access and file operations
+- ❌ Natural language processing
+- ❌ Rules engine
 
 ---
 
@@ -85,24 +88,159 @@ src/lib/
 
 ---
 
-### **Step 3: Repository Management System**
+### **Step 2.5: GitHub PAT Collection & Repository Access** ⭐ **CURRENT STEP**
 
-**Priority: High | Time: 3-4 days**
+**Priority: High | Time: 2-3 days**
 
 **What to build:**
 
-- GitHub repository creation/connection
-- File structure initialization (main.journal, accounts.journal, entries/, rules/)
-- GitHub Contents API integration for file operations
+- GitHub Personal Access Token collection UI
+- Supabase table for encrypted PAT storage
+- PAT encryption/decryption utilities
+- GitHub repository listing and access
+- Repository file operations (CRUD)
+
+**New files:**
+
+```
+src/app/api/
+├── github/
+│   ├── store-pat/
+│   │   └── route.ts      ← Store encrypted PAT
+│   ├── repos/
+│   │   └── route.ts      ← List user repositories
+│   └── files/
+│       └── route.ts      ← File operations (CRUD)
+
+src/lib/
+├── github-client.ts      ← GitHub API client with PAT
+├── pat-encryption.ts     ← Encrypt/decrypt PATs
+└── github-repo.ts        ← Repository operations
+
+src/components/
+├── pat-collection/
+│   ├── PATCollectionForm.tsx
+│   ├── PATInstructions.tsx
+│   └── RepositorySelector.tsx
+└── github-setup/
+    ├── GitHubSetupWizard.tsx
+    └── RepositoryBrowser.tsx
+```
+
+**Database schema:**
+
+```sql
+-- Supabase table for encrypted PATs
+CREATE TABLE user_github_tokens (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+  encrypted_pat TEXT NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  UNIQUE(user_id)
+);
+
+-- Enable RLS
+ALTER TABLE user_github_tokens ENABLE ROW LEVEL SECURITY;
+
+-- Policy: Users can only access their own tokens
+CREATE POLICY "Users can manage their own tokens" ON user_github_tokens
+  FOR ALL USING (auth.uid() = user_id);
+```
+
+**Key features:**
+
+- Secure PAT collection with clear instructions
+- Server-side encryption using Supabase + environment secrets
+- GitHub API integration for repository access
+- File operations (read, create, update, delete) via GitHub Contents API
+- Repository selection/creation workflow
+
+**Implementation Details:**
+
+1. **PAT Collection UI Flow:**
+
+   - Show instructions for creating GitHub PAT with `repo` scope
+   - Input form with validation and security warnings
+   - Test PAT validity before storing
+   - Clear success/error feedback
+
+2. **Security Implementation:**
+
+   - Use `crypto-js` for AES encryption
+   - Store encryption key in environment variables
+   - Never log or expose PATs in client-side code
+   - Implement token refresh/validation
+
+3. **GitHub API Integration:**
+
+   - List user repositories with proper filtering
+   - Support both public and private repos
+   - Handle GitHub API rate limits and errors
+   - Implement proper error handling and user feedback
+
+4. **File Operations:**
+   - Read file contents via GitHub Contents API
+   - Create/update files with proper SHA handling
+   - Delete files when needed
+   - Handle binary files and encoding properly
+
+**User Flow After PAT Collection:**
+
+1. **Repository Selection:**
+
+   - User sees list of their GitHub repositories
+   - Option to create new `ledger-entry` repository
+   - Option to connect existing repository
+   - Repository validation (check if suitable for ledger files)
+
+2. **Repository Setup:**
+
+   - If new repo: initialize with starter files
+   - If existing repo: scan for existing ledger files
+   - Show repository structure and file browser
+   - Allow user to configure main journal file
+
+3. **Ready for Ledger Operations:**
+   - User can now create/edit ledger files
+   - Natural language input will be processed
+   - Files will be committed to GitHub with proper messages
+   - Ledger CLI operations will work with user's files
+
+**Success Criteria:**
+
+- ✅ User can store GitHub PAT securely
+- ✅ User can access their GitHub repositories
+- ✅ User can read/write files in their chosen repository
+- ✅ All operations work with proper error handling
+- ✅ User understands the security implications
+
+---
+
+### **Step 3: Ledger Repository Structure Initialization**
+
+**Priority: High | Time: 2-3 days**
+
+**What to build:**
+
+- Ledger file structure initialization in user's GitHub repo
+- Repository creation/connection workflow
+- Starter file templates (main.journal, accounts.journal, entries/, rules/)
 - Git commit workflow with proper commit messages
 
 **New files:**
 
 ```
 src/lib/
-├── github-repo.ts        ← Repository management
-├── file-operations.ts    ← GitHub file CRUD
-└── ledger-structure.ts   ← Initialize repo structure
+├── ledger-structure.ts   ← Initialize repo structure
+├── file-templates.ts     ← Starter file templates
+└── commit-utils.ts       ← Git commit message generation
+
+src/components/
+└── repo-setup/
+    ├── RepoCreationWizard.tsx
+    ├── FileStructurePreview.tsx
+    └── TemplateSelector.tsx
 ```
 
 **Key features:**
@@ -111,6 +249,7 @@ src/lib/
 - Initialize proper file structure per spec
 - SHA-based file updates via GitHub API
 - Clear commit messages: `entry: 2025/09/09 Starbucks — Personal (THB 100)`
+- Template selection based on user location/currency
 
 ---
 
@@ -403,13 +542,78 @@ src/
 ## **Success Metrics for Phase 0**
 
 - ✅ User authenticates with GitHub OAuth
-- ✅ User creates/connects private ledger repository
-- ✅ User enters natural language: `coffee 100 Starbucks`
-- ✅ System generates draft transaction with proper accounts
-- ✅ User saves transaction to GitHub with clear commit message
-- ✅ User runs ledger commands (`balance`, `register`) via microservice
-- ✅ User manages rules through dedicated UI
-- ✅ Multi-currency transactions work correctly
-- ✅ All data stored in user's GitHub repo (no server-side storage)
+- 🔄 User provides GitHub PAT and connects to repository
+- ❌ User enters natural language: `coffee 100 Starbucks`
+- ❌ System generates draft transaction with proper accounts
+- ❌ User saves transaction to GitHub with clear commit message
+- ❌ User runs ledger commands (`balance`, `register`) via microservice
+- ❌ User manages rules through dedicated UI
+- ❌ Multi-currency transactions work correctly
+- ❌ All data stored in user's GitHub repo (no server-side storage)
+
+**Current Progress:**
+
+- **Completed:** GitHub OAuth authentication, user profile management
+- **In Progress:** GitHub PAT collection and repository access
+- **Next:** Ledger file structure initialization and natural language processing
+
+## **Immediate Next Steps (Step 2.5)**
+
+### **1. Create Supabase Table for PAT Storage**
+
+Run this SQL in your Supabase SQL editor:
+
+```sql
+-- Create table for encrypted GitHub PATs
+CREATE TABLE user_github_tokens (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+  encrypted_pat TEXT NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  UNIQUE(user_id)
+);
+
+-- Enable RLS
+ALTER TABLE user_github_tokens ENABLE ROW LEVEL SECURITY;
+
+-- Policy: Users can only access their own tokens
+CREATE POLICY "Users can manage their own tokens" ON user_github_tokens
+  FOR ALL USING (auth.uid() = user_id);
+```
+
+### **2. Environment Variables**
+
+Add to your `.env.local`:
+
+```bash
+# GitHub PAT encryption key (generate with: openssl rand -hex 32)
+GITHUB_PAT_ENCRYPTION_KEY=your_32_character_hex_key_here
+```
+
+### **3. Key Implementation Files to Create**
+
+1. **`src/lib/pat-encryption.ts`** - Encrypt/decrypt PATs
+2. **`src/app/api/github/store-pat/route.ts`** - Store encrypted PAT
+3. **`src/app/api/github/repos/route.ts`** - List user repositories
+4. **`src/components/pat-collection/PATCollectionForm.tsx`** - PAT input UI
+5. **`src/components/github-setup/GitHubSetupWizard.tsx`** - Setup flow
+
+### **4. Security Considerations**
+
+- **Never store PATs in plain text**
+- **Use AES encryption with a strong key**
+- **Validate PAT scope before storing (must have `repo` access)**
+- **Implement token refresh/validation**
+- **Clear error messages without exposing sensitive data**
+
+### **5. User Experience Flow**
+
+1. After GitHub OAuth, check if user has stored PAT
+2. If no PAT, show PAT collection form with clear instructions
+3. Test PAT validity before storing
+4. Once PAT is stored, show repository selection
+5. Initialize or connect to chosen repository
+6. User is ready to use ledger features
 
 This plan transforms your current Monaco Editor interface into a complete GitHub-backed ledger application while maintaining the excellent editing experience you already have.
