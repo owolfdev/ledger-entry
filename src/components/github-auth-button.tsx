@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Github } from "lucide-react";
 import { useState } from "react";
+import { getBaseUrl } from "@/lib/utils";
 
 interface GitHubAuthButtonProps {
   mode?: "signin" | "signup";
@@ -24,7 +25,7 @@ export function GitHubAuthButton({
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: "github",
         options: {
-          redirectTo: `${window.location.origin}/auth/callback?next=/repositories`,
+          redirectTo: `${getBaseUrl()}/auth/callback?next=/repositories`,
           scopes: "repo user:email",
           queryParams: {
             access_type: "offline",
