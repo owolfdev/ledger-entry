@@ -9,10 +9,17 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { RepoStatusCard } from "./repo-status-card";
 import { CreateRepoForm } from "./create-repo-form";
 import { RepoInfo } from "@/lib/ledger/repo-scanner";
-import { Plus, RefreshCw, CheckCircle, ArrowLeft } from "lucide-react";
+import { Plus, RefreshCw, CheckCircle, ArrowLeft, Search } from "lucide-react";
 
 interface RepoSelectionProps {
   onRepoConnected?: (repo: RepoInfo) => void;
@@ -181,52 +188,52 @@ export function RepoSelection({ onRepoConnected }: RepoSelectionProps) {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Select Existing Repository */}
-          <Card
-            className="hover:shadow-md transition-all duration-200 cursor-pointer border-border hover:border-border/50"
-            onClick={() => setMode("select")}
-          >
+          <Card className="border-border">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-foreground">
-                <CheckCircle className="h-5 w-5 text-blue-500 dark:text-blue-400" />
+                <Search className="h-5 w-5 text-blue-500 dark:text-blue-400" />
                 Select Existing Repository
               </CardTitle>
               <CardDescription className="text-muted-foreground">
                 Choose from your existing GitHub repositories
               </CardDescription>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                {repos.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">
-                    No repositories found
+            <CardContent className="space-y-4">
+              {repos.length === 0 ? (
+                <p className="text-sm text-muted-foreground">
+                  No repositories found
+                </p>
+              ) : (
+                <div className="space-y-2">
+                  <Select
+                    onValueChange={(value) => {
+                      const repo = repos.find((r) => r.id.toString() === value);
+                      if (repo) {
+                        handleSelectRepo(repo);
+                      }
+                    }}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select a repository..." />
+                    </SelectTrigger>
+                    <SelectContent className="max-h-60">
+                      {repos.map((repo) => (
+                        <SelectItem key={repo.id} value={repo.id.toString()}>
+                          <div className="flex flex-col items-start">
+                            <span className="font-medium">{repo.name}</span>
+                            <span className="text-xs text-muted-foreground">
+                              {repo.full_name}
+                            </span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">
+                    Found {repos.length} repositories
                   </p>
-                ) : (
-                  <div className="space-y-2 max-h-48 overflow-y-auto">
-                    {repos.slice(0, 5).map((repo) => (
-                      <div
-                        key={repo.id}
-                        className="p-2 border border-border rounded hover:bg-muted/50 cursor-pointer transition-colors"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleSelectRepo(repo);
-                        }}
-                      >
-                        <div className="font-medium text-sm text-foreground">
-                          {repo.name}
-                        </div>
-                        <div className="text-xs text-muted-foreground">
-                          {repo.full_name}
-                        </div>
-                      </div>
-                    ))}
-                    {repos.length > 5 && (
-                      <p className="text-xs text-muted-foreground text-center">
-                        ... and {repos.length - 5} more
-                      </p>
-                    )}
-                  </div>
-                )}
-              </div>
+                </div>
+              )}
             </CardContent>
           </Card>
 

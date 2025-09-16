@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { RepoSelection } from "@/components/ledger/repo-selection";
 import { RepoInfo } from "@/lib/ledger/repo-scanner";
+import { ConnectedRepo } from "@/lib/ledger/repo-db";
 import {
   Card,
   CardContent,
@@ -13,7 +14,9 @@ import {
 import { CheckCircle, ArrowRight, RefreshCw } from "lucide-react";
 
 export default function ConfigureGitHubPage() {
-  const [connectedRepo, setConnectedRepo] = useState<RepoInfo | null>(null);
+  const [connectedRepo, setConnectedRepo] = useState<ConnectedRepo | null>(
+    null
+  );
   const [isLoading, setIsLoading] = useState(true);
 
   const checkConnectedRepo = async () => {
@@ -35,7 +38,18 @@ export default function ConfigureGitHubPage() {
   }, []);
 
   const handleRepoConnected = (repo: RepoInfo) => {
-    setConnectedRepo(repo);
+    // Convert RepoInfo to ConnectedRepo format
+    const connectedRepo: ConnectedRepo = {
+      id: repo.id.toString(),
+      user_id: "", // Will be set by the API
+      repo_owner: repo.full_name.split("/")[0],
+      repo_name: repo.name,
+      repo_full_name: repo.full_name,
+      is_active: true,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+    setConnectedRepo(connectedRepo);
   };
 
   const handleSwitchRepository = () => {
@@ -87,10 +101,10 @@ export default function ConfigureGitHubPage() {
                   <div className="flex items-center justify-between p-4 bg-card rounded-lg border border-border">
                     <div>
                       <h3 className="font-semibold text-foreground">
-                        {connectedRepo.name}
+                        {connectedRepo.repo_name || "Repository Name"}
                       </h3>
                       <p className="text-sm text-muted-foreground">
-                        {connectedRepo.full_name}
+                        {connectedRepo.repo_full_name || "Repository Full Name"}
                       </p>
                     </div>
                     <div className="flex items-center gap-2">
