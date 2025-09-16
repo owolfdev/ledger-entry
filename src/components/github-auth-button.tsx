@@ -21,11 +21,13 @@ export function GitHubAuthButton({
     const supabase = createClient();
     setIsLoading(true);
 
+    const redirectUrl = `${getBaseUrl()}/auth/callback?next=/repositories`;
+
     try {
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: "github",
         options: {
-          redirectTo: `${getBaseUrl()}/auth/callback?next=/repositories`,
+          redirectTo: redirectUrl,
           scopes: "repo user:email",
           queryParams: {
             access_type: "offline",

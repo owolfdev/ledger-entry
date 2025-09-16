@@ -12,6 +12,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Github, CheckCircle, XCircle, AlertCircle } from "lucide-react";
 import { useState } from "react";
+import { getBaseUrl } from "@/lib/utils";
 
 export function GitHubTest() {
   const [testResult, setTestResult] = useState<{
@@ -29,7 +30,7 @@ export function GitHubTest() {
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: "github",
         options: {
-          redirectTo: `${window.location.origin}/auth/callback?next=/repositories`,
+          redirectTo: `${getBaseUrl()}/auth/callback?next=/repositories`,
           scopes: "repo user:email",
         },
       });
