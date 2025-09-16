@@ -1,4 +1,8 @@
-import { LedgerTemplate, AccountDefinition, RuleDefinition } from "./templates";
+import {
+  LedgerTemplate,
+  AccountDefinition,
+  RuleDefinition,
+} from "@/lib/ledger/templates";
 
 export interface LedgerFile {
   path: string;
