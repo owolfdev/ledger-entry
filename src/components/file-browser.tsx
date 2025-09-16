@@ -63,7 +63,7 @@ export function FileBrowser({
       try {
         // This would need to be implemented as an API route
         const response = await fetch(
-          `/api/repositories/${owner}/${repo}/files/${file.path}?branch=${currentBranch}`
+          `/api/configure-github/${owner}/${repo}/files/${file.path}?branch=${currentBranch}`
         );
         if (response.ok) {
           const content = await response.text();
@@ -96,7 +96,7 @@ export function FileBrowser({
     setIsSaving(true);
     try {
       const response = await fetch(
-        `/api/repositories/${owner}/${repo}/files/${selectedFile.path}`,
+        `/api/configure-github/${owner}/${repo}/files/${selectedFile.path}`,
         {
           method: "PUT",
           headers: {

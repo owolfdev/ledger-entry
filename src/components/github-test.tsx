@@ -30,7 +30,7 @@ export function GitHubTest() {
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: "github",
         options: {
-          redirectTo: `${getBaseUrl()}/auth/callback?next=/repositories`,
+          redirectTo: `${getBaseUrl()}/auth/callback?next=/configure-github`,
           scopes: "repo user:email",
         },
       });

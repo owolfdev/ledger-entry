@@ -10,7 +10,7 @@ export default function Home() {
           </div>
           <div className="flex items-center gap-3">
             <Link
-              href="/repositories"
+              href="/configure-github"
               className="inline-flex items-center rounded-md bg-foreground text-background px-3 py-2 text-xs font-medium hover:opacity-90 transition"
             >
               Configure GitHub

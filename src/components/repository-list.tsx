@@ -111,7 +111,7 @@ export function RepositoryList({ repositories }: RepositoryListProps) {
                       asChild
                       onClick={(e) => e.stopPropagation()}
                     >
-                      <Link href={`/repositories/${repo.full_name}`}>
+                      <Link href={`/configure-github/${repo.full_name}`}>
                         Browse Files
                       </Link>
                     </Button>
@@ -194,7 +194,9 @@ export function RepositoryList({ repositories }: RepositoryListProps) {
                 <div className="space-y-2">
                   {canRead(selectedRepo) && (
                     <Button asChild className="w-full">
-                      <Link href={`/repositories/${selectedRepo.full_name}`}>
+                      <Link
+                        href={`/configure-github/${selectedRepo.full_name}`}
+                      >
                         Browse Files
                       </Link>
                     </Button>

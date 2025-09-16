@@ -21,7 +21,7 @@ export function GitHubAuthButton({
     const supabase = createClient();
     setIsLoading(true);
 
-    const redirectUrl = `${getBaseUrl()}/auth/callback?next=/repositories`;
+    const redirectUrl = `${getBaseUrl()}/auth/callback?next=/configure-github`;
 
     try {
       const { data, error } = await supabase.auth.signInWithOAuth({
