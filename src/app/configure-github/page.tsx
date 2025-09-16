@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import { RepositoryList } from "@/components/repository-list";
 import { GitHubDebug } from "@/components/github-debug";
-import { GitHubTokenInput } from "@/components/github-token-input";
 import { CreateRepositoryForm } from "@/components/create-repository-form";
 import {
   Card,
@@ -80,7 +79,6 @@ export default function RepositoriesPage() {
         {repositories.length === 0 ? (
           <div className="space-y-6">
             <GitHubDebug />
-            <GitHubTokenInput />
             <CreateRepositoryForm
               onRepositoryCreated={handleRepositoryCreated}
             />
@@ -102,7 +100,6 @@ export default function RepositoriesPage() {
           </div>
         ) : (
           <div className="space-y-6">
-            <GitHubTokenInput />
             <CreateRepositoryForm
               onRepositoryCreated={handleRepositoryCreated}
             />
