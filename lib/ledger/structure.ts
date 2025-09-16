@@ -183,7 +183,7 @@ export function generateSampleTransaction(
 
   // Simple pattern matching based on the template rules
   let debitAccount = template.rules.defaults.fallbackCredit; // This should be a debit account
-  let creditAccount = template.rules.defaults.fallbackCredit;
+  const creditAccount = template.rules.defaults.fallbackCredit;
 
   // Find matching item rules
   for (const item of template.rules.items) {

@@ -14,7 +14,6 @@ import {
   Plus,
   GitBranch,
 } from "lucide-react";
-import Link from "next/link";
 import { useState } from "react";
 import { Textarea } from "@/components/ui/textarea";
 
@@ -73,7 +72,7 @@ export function FileBrowser({
         } else {
           setFileContent("Error loading file content");
         }
-      } catch (error) {
+      } catch {
         setFileContent("Error loading file content");
       } finally {
         setIsLoading(false);

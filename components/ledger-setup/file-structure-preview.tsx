@@ -1,9 +1,7 @@
 "use client";
 
-import {
-  LedgerTemplate,
-  generateLedgerStructure,
-} from "@/lib/ledger/structure";
+import { generateLedgerStructure } from "@/lib/ledger/structure";
+import { LedgerTemplate } from "@/lib/ledger/templates";
 import {
   Card,
   CardContent,
@@ -12,7 +10,6 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { FileText, Folder, ChevronRight, ChevronDown } from "lucide-react";
 import { useState } from "react";
 
@@ -130,7 +127,7 @@ export function FileStructurePreview({
 
       <Card>
         <CardHeader>
-          <CardTitle>What's Included</CardTitle>
+          <CardTitle>What&apos;s Included</CardTitle>
           <CardDescription>
             Your ledger will be set up with everything you need to get started
           </CardDescription>

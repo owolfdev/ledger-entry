@@ -1,17 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getGitHubClient } from "@/lib/github/server";
 
-interface RouteParams {
-  params: {
-    owner: string;
-    repo: string;
-    path: string;
-  };
-}
-
-export async function GET(request: NextRequest, { params }: RouteParams) {
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ owner: string; repo: string; path: string }> }
+) {
   try {
-    const { owner, repo, path } = params;
+    const { owner, repo, path } = await params;
     const { searchParams } = new URL(request.url);
     const branch = searchParams.get("branch") || "main";
 
@@ -55,9 +50,12 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
   }
 }
 
-export async function PUT(request: NextRequest, { params }: RouteParams) {
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: Promise<{ owner: string; repo: string; path: string }> }
+) {
   try {
-    const { owner, repo, path } = params;
+    const { owner, repo, path } = await params;
     const body = await request.json();
     const { content, message, branch = "main" } = body;
 
@@ -89,7 +87,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       if (currentFile.length > 0 && currentFile[0].sha) {
         sha = currentFile[0].sha;
       }
-    } catch (error) {
+    } catch {
       // File might not exist, which is fine for creating new files
       console.log("File might not exist, creating new file");
     }

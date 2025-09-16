@@ -134,7 +134,7 @@ export function LedgerSetupWizard({
         return (
           <TemplateSelector
             onTemplateSelect={handleTemplateSelect}
-            selectedTemplate={selectedTemplate}
+            selectedTemplate={selectedTemplate || undefined}
           />
         );
 
@@ -161,7 +161,7 @@ export function LedgerSetupWizard({
                 />
                 <p className="text-xs text-muted-foreground mt-1">
                   Required to create files in your repository. Make sure it has
-                  'repo' scope.
+                  &apos;repo&apos; scope.
                 </p>
               </div>
 

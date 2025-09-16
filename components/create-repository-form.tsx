@@ -15,8 +15,24 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { Plus, Loader2 } from "lucide-react";
 
+interface GitHubRepository {
+  id: number;
+  name: string;
+  full_name: string;
+  description: string | null;
+  private: boolean;
+  html_url: string;
+  clone_url: string;
+  default_branch: string;
+  permissions: {
+    admin: boolean;
+    push: boolean;
+    pull: boolean;
+  };
+}
+
 interface CreateRepositoryFormProps {
-  onRepositoryCreated?: (repository: any) => void;
+  onRepositoryCreated?: (repository: GitHubRepository) => void;
 }
 
 export function CreateRepositoryForm({
@@ -81,7 +97,7 @@ export function CreateRepositoryForm({
     }
   };
 
-  const handleInputChange = (field: string, value: any) => {
+  const handleInputChange = (field: string, value: string | boolean) => {
     setFormData((prev) => ({
       ...prev,
       [field]: value,

@@ -1,5 +1,30 @@
 import { GitHubRepository } from "./client";
 
+interface GitHubApiRepository {
+  id: number;
+  name: string;
+  full_name: string;
+  description: string | null;
+  private: boolean;
+  html_url: string;
+  clone_url: string;
+  default_branch: string;
+  permissions?: {
+    admin?: boolean;
+    push?: boolean;
+    pull?: boolean;
+  };
+}
+
+interface GitHubApiFile {
+  name: string;
+  path: string;
+  type: string;
+  size: number;
+  download_url: string | null;
+  sha?: string;
+}
+
 export async function getPublicRepositories(
   username: string
 ): Promise<GitHubRepository[]> {
@@ -14,7 +39,7 @@ export async function getPublicRepositories(
 
     const data = await response.json();
 
-    return data.map((repo: any) => ({
+    return data.map((repo: GitHubApiRepository) => ({
       id: repo.id,
       name: repo.name,
       full_name: repo.full_name,
@@ -53,7 +78,7 @@ export async function getPublicRepositoryContents(
     const data = await response.json();
 
     if (Array.isArray(data)) {
-      return data.map((item: any) => ({
+      return data.map((item: GitHubApiFile) => ({
         name: item.name,
         path: item.path,
         type: item.type,

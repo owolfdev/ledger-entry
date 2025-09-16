@@ -3,7 +3,6 @@
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Github } from "lucide-react";
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 interface GitHubAuthButtonProps {
@@ -16,7 +15,6 @@ export function GitHubAuthButton({
   className,
 }: GitHubAuthButtonProps) {
   const [isLoading, setIsLoading] = useState(false);
-  const router = useRouter();
 
   const handleGitHubAuth = async () => {
     const supabase = createClient();

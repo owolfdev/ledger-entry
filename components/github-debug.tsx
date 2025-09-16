@@ -14,7 +14,16 @@ import { AlertCircle, CheckCircle, XCircle, RefreshCw } from "lucide-react";
 import { useState, useEffect } from "react";
 
 export function GitHubDebug() {
-  const [userData, setUserData] = useState<any>(null);
+  const [userData, setUserData] = useState<{
+    error?: string;
+    email?: string;
+    user_metadata?: {
+      name?: string;
+      user_name?: string;
+      [key: string]: unknown;
+    };
+    app_metadata?: Record<string, unknown>;
+  } | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   const checkUserData = async () => {

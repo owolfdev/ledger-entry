@@ -65,7 +65,7 @@ export async function POST(request: NextRequest) {
           // File exists, skip or update
           results.errors.push(`File ${file.path} already exists, skipping`);
           continue;
-        } catch (error) {
+        } catch {
           // File doesn't exist, create it
         }
 

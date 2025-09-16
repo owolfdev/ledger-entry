@@ -25,9 +25,7 @@ export async function storeGitHubToken(userId: string, token: string) {
   }
 }
 
-export async function getStoredGitHubToken(
-  userId: string
-): Promise<string | null> {
+export async function getStoredGitHubToken(): Promise<string | null> {
   try {
     const supabase = await createClient();
     const {

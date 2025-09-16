@@ -88,14 +88,14 @@ export default function RepositoriesPage() {
               <CardHeader>
                 <CardTitle>No Repositories Found</CardTitle>
                 <CardDescription>
-                  You don't have access to any repositories or GitHub
+                  You don&apos;t have access to any repositories or GitHub
                   authentication is not set up.
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <p className="text-sm text-muted-foreground">
-                  Make sure you've authenticated with GitHub and have access to
-                  repositories.
+                  Make sure you&apos;ve authenticated with GitHub and have
+                  access to repositories.
                 </p>
               </CardContent>
             </Card>

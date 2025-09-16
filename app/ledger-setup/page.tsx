@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { LedgerSetupWizard } from "@/components/ledger-setup/ledger-setup-wizard";
 import {
@@ -23,7 +23,7 @@ interface GitHubRepository {
   };
 }
 
-export default function LedgerSetupPage() {
+function LedgerSetupContent() {
   const searchParams = useSearchParams();
   const [repositories, setRepositories] = useState<GitHubRepository[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -134,7 +134,7 @@ export default function LedgerSetupPage() {
                 <h4 className="font-medium">GitHub Setup:</h4>
                 <ul className="text-sm text-muted-foreground space-y-1">
                   <li>• A GitHub repository with write access</li>
-                  <li>• Personal Access Token with 'repo' scope</li>
+                  <li>• Personal Access Token with &apos;repo&apos; scope</li>
                   <li>• GitHub account connected to this app</li>
                 </ul>
               </div>
@@ -161,5 +161,23 @@ export default function LedgerSetupPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function LedgerSetupPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="container mx-auto py-8 px-4">
+          <div className="max-w-4xl mx-auto">
+            <div className="flex items-center justify-center py-8">
+              <div className="text-muted-foreground">Loading...</div>
+            </div>
+          </div>
+        </div>
+      }
+    >
+      <LedgerSetupContent />
+    </Suspense>
   );
 }

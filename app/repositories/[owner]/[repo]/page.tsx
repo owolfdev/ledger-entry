@@ -4,22 +4,22 @@ import { FileBrowser } from "@/components/file-browser";
 import { notFound } from "next/navigation";
 
 interface RepositoryPageProps {
-  params: {
+  params: Promise<{
     owner: string;
     repo: string;
-  };
-  searchParams: {
+  }>;
+  searchParams: Promise<{
     path?: string;
     branch?: string;
-  };
+  }>;
 }
 
 export default async function RepositoryPage({
   params,
   searchParams,
 }: RepositoryPageProps) {
-  const { owner, repo } = params;
-  const { path = "", branch = "main" } = searchParams;
+  const { owner, repo } = await params;
+  const { path = "", branch = "main" } = await searchParams;
 
   let files = [];
 

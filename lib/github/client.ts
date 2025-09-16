@@ -203,7 +203,7 @@ export class GitHubClient {
         if ("sha" in data) {
           sha = data.sha;
         }
-      } catch (error) {
+      } catch {
         // File doesn't exist, we'll create it
       }
 

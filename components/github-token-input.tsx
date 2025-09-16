@@ -44,7 +44,7 @@ export function GitHubTokenInput() {
         setStatus("error");
         setMessage(data.error || "Failed to store token");
       }
-    } catch (error) {
+    } catch {
       setStatus("error");
       setMessage("Failed to store token");
     } finally {
