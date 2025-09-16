@@ -1,9 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { RepositoryList } from "@/components/repository-list";
-import { GitHubDebug } from "@/components/github-debug";
-import { CreateRepositoryForm } from "@/components/create-repository-form";
+import { RepoSelection } from "@/components/ledger/repo-selection";
+import { RepoInfo } from "@/lib/ledger/repo-scanner";
 import {
   Card,
   CardContent,
@@ -11,47 +10,36 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { CheckCircle, ArrowRight, RefreshCw } from "lucide-react";
 
-interface GitHubRepository {
-  id: number;
-  name: string;
-  full_name: string;
-  description: string | null;
-  private: boolean;
-  html_url: string;
-  clone_url: string;
-  default_branch: string;
-  permissions: {
-    admin: boolean;
-    push: boolean;
-    pull: boolean;
-  };
-}
-
-export default function RepositoriesPage() {
-  const [repositories, setRepositories] = useState<GitHubRepository[]>([]);
+export default function ConfigureGitHubPage() {
+  const [connectedRepo, setConnectedRepo] = useState<RepoInfo | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  const fetchRepositories = async () => {
+  const checkConnectedRepo = async () => {
     try {
-      const response = await fetch("/api/github/repositories");
+      const response = await fetch("/api/ledger/repos");
       if (response.ok) {
         const data = await response.json();
-        setRepositories(data.repositories || []);
+        setConnectedRepo(data.connectedRepo);
       }
     } catch (error) {
-      console.error("Error fetching repositories:", error);
+      console.error("Error checking connected repo:", error);
     } finally {
       setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchRepositories();
+    checkConnectedRepo();
   }, []);
 
-  const handleRepositoryCreated = (newRepository: GitHubRepository) => {
-    setRepositories((prev) => [newRepository, ...prev]);
+  const handleRepoConnected = (repo: RepoInfo) => {
+    setConnectedRepo(repo);
+  };
+
+  const handleSwitchRepository = () => {
+    setConnectedRepo(null);
   };
 
   if (isLoading) {
@@ -59,7 +47,10 @@ export default function RepositoriesPage() {
       <div className="container mx-auto py-8 px-4">
         <div className="max-w-6xl mx-auto">
           <div className="flex items-center justify-center py-8">
-            <div className="text-muted-foreground">Loading repositories...</div>
+            <div className="flex items-center gap-2">
+              <RefreshCw className="h-4 w-4 animate-spin" />
+              <span>Loading...</span>
+            </div>
           </div>
         </div>
       </div>
@@ -70,41 +61,64 @@ export default function RepositoriesPage() {
     <div className="container mx-auto py-8 px-4">
       <div className="max-w-6xl mx-auto">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">Your GitHub Repositories</h1>
+          <h1 className="text-3xl font-bold mb-2 text-foreground">
+            Configure GitHub
+          </h1>
           <p className="text-muted-foreground">
-            Select a repository to browse and manage its files
+            Set up a compatible repository for your ledger files
           </p>
         </div>
 
-        {repositories.length === 0 ? (
+        {connectedRepo ? (
           <div className="space-y-6">
-            <GitHubDebug />
-            <CreateRepositoryForm
-              onRepositoryCreated={handleRepositoryCreated}
-            />
-            <Card>
+            {/* Success State */}
+            <Card className="border-border bg-muted/30">
               <CardHeader>
-                <CardTitle>No Repositories Found</CardTitle>
-                <CardDescription>
-                  You don&apos;t have access to any repositories or GitHub
-                  authentication is not set up.
+                <CardTitle className="flex items-center gap-2 text-foreground">
+                  <CheckCircle className="h-5 w-5 text-green-500 dark:text-green-400" />
+                  Repository Connected Successfully
+                </CardTitle>
+                <CardDescription className="text-muted-foreground">
+                  Your ledger repository is ready to use
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <p className="text-sm text-muted-foreground">
-                  Make sure you&apos;ve authenticated with GitHub and have
-                  access to repositories.
-                </p>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between p-4 bg-card rounded-lg border border-border">
+                    <div>
+                      <h3 className="font-semibold text-foreground">
+                        {connectedRepo.name}
+                      </h3>
+                      <p className="text-sm text-muted-foreground">
+                        {connectedRepo.full_name}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <CheckCircle className="h-4 w-4 text-green-500 dark:text-green-400" />
+                      <span className="text-sm text-muted-foreground">
+                        Ready
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-2">
+                    <button className="inline-flex items-center px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors">
+                      Continue to Ledger
+                      <ArrowRight className="h-4 w-4 ml-2" />
+                    </button>
+                    <button
+                      onClick={handleSwitchRepository}
+                      className="inline-flex items-center px-4 py-2 border border-border text-foreground rounded-md hover:bg-muted transition-colors"
+                    >
+                      Switch Repository
+                    </button>
+                  </div>
+                </div>
               </CardContent>
             </Card>
           </div>
         ) : (
-          <div className="space-y-6">
-            <CreateRepositoryForm
-              onRepositoryCreated={handleRepositoryCreated}
-            />
-            <RepositoryList repositories={repositories} />
-          </div>
+          <RepoSelection onRepoConnected={handleRepoConnected} />
         )}
       </div>
     </div>

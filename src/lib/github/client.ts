@@ -248,25 +248,29 @@ export class GitHubClient {
     }
   }
 
-  async createRepository(
-    name: string,
-    description?: string,
-    isPrivate: boolean = false,
-    autoInit: boolean = true,
-    gitignoreTemplate?: string,
-    licenseTemplate?: string
-  ): Promise<GitHubRepository> {
+  async createRepository(options: {
+    name: string;
+    description?: string;
+    private?: boolean;
+    autoInit?: boolean;
+    gitignoreTemplate?: string;
+    licenseTemplate?: string;
+  }): Promise<GitHubRepository> {
     try {
+      console.log("GitHub client createRepository called with:", options);
+
       const { data } = await this.octokit.repos.createForAuthenticatedUser({
-        name,
-        description,
-        private: isPrivate,
-        auto_init: autoInit,
-        gitignore_template: gitignoreTemplate,
-        license_template: licenseTemplate,
+        name: options.name,
+        description: options.description,
+        private: options.private ?? false,
+        auto_init: options.autoInit ?? true,
+        gitignore_template: options.gitignoreTemplate,
+        license_template: options.licenseTemplate,
       });
 
-      return {
+      console.log("GitHub API response:", data);
+
+      const result = {
         id: data.id,
         name: data.name,
         full_name: data.full_name,
@@ -281,9 +285,73 @@ export class GitHubClient {
           pull: true,
         },
       };
+
+      console.log("Returning repository:", result);
+      return result;
     } catch (error) {
       console.error("Error creating repository:", error);
       throw new Error("Failed to create repository");
+    }
+  }
+
+  async getFile(
+    owner: string,
+    repo: string,
+    path: string
+  ): Promise<GitHubFile | null> {
+    try {
+      const { data } = await this.octokit.repos.getContent({
+        owner,
+        repo,
+        path,
+      });
+
+      if ("content" in data) {
+        return {
+          name: data.name,
+          path: data.path,
+          type: data.type as "file" | "dir",
+          size: data.size,
+          download_url: data.download_url,
+          content: data.content
+            ? Buffer.from(data.content, "base64").toString("utf-8")
+            : undefined,
+          sha: data.sha,
+        };
+      }
+      return null;
+    } catch (error) {
+      // File doesn't exist
+      return null;
+    }
+  }
+
+  async getDirectoryContents(
+    owner: string,
+    repo: string,
+    path: string
+  ): Promise<GitHubFile[]> {
+    try {
+      const { data } = await this.octokit.repos.getContent({
+        owner,
+        repo,
+        path,
+      });
+
+      if (Array.isArray(data)) {
+        return data.map((item) => ({
+          name: item.name,
+          path: item.path,
+          type: item.type as "file" | "dir",
+          size: item.size,
+          download_url: item.download_url,
+          sha: item.sha,
+        }));
+      }
+      return [];
+    } catch (error) {
+      // Directory doesn't exist
+      return [];
     }
   }
 }
