@@ -109,11 +109,22 @@ export async function scanUserRepositories(
   githubClient: GitHubClient
 ): Promise<RepoInfo[]> {
   try {
+    console.log("Starting repository scan...");
     const repos = await githubClient.getUserRepositories();
+    console.log(`Found ${repos.length} repositories to scan`);
+
+    // Limit scanning to first 20 repos to avoid rate limits
+    const reposToScan = repos.slice(0, 20);
+    console.log(
+      `Scanning ${reposToScan.length} repositories (limited to avoid rate limits)`
+    );
 
     // Scan each repo for ledger structure
     const reposWithStructure = await Promise.all(
-      repos.map(async (repo) => {
+      reposToScan.map(async (repo, index) => {
+        console.log(
+          `Scanning repo ${index + 1}/${reposToScan.length}: ${repo.name}`
+        );
         const [owner, repoName] = repo.full_name.split("/");
         const ledgerStructure = await scanLedgerStructure(
           githubClient,
@@ -128,7 +139,23 @@ export async function scanUserRepositories(
       })
     );
 
-    return reposWithStructure;
+    // Add remaining repos without scanning (they'll show as incompatible)
+    const remainingRepos = repos.slice(20).map((repo) => ({
+      ...repo,
+      ledgerStructure: {
+        hasMainJournal: false,
+        hasAccountsJournal: false,
+        hasEntriesFolder: false,
+        hasRulesFolder: false,
+        isCompatible: false,
+        missingFiles: ["main.journal", "accounts.journal"],
+        missingFolders: ["entries/", "rules/"],
+      },
+    }));
+
+    const allRepos = [...reposWithStructure, ...remainingRepos];
+    console.log(`Repository scan complete: ${allRepos.length} total repos`);
+    return allRepos;
   } catch (error) {
     console.error("Error scanning user repositories:", error);
     return [];

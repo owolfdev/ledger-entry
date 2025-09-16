@@ -28,11 +28,17 @@ export interface GitHubFile {
 
 export class GitHubClient {
   private octokit: Octokit;
+  private accessToken: string;
 
   constructor(accessToken: string) {
+    this.accessToken = accessToken;
     this.octokit = new Octokit({
       auth: accessToken,
     });
+  }
+
+  getAuthToken(): string {
+    return this.accessToken;
   }
 
   async getUserRepositories(): Promise<GitHubRepository[]> {
@@ -290,6 +296,20 @@ export class GitHubClient {
       return result;
     } catch (error) {
       console.error("Error creating repository:", error);
+
+      // Check if it's a rate limit error
+      if (error && typeof error === "object" && "status" in error) {
+        const httpError = error as { status: number; message?: string };
+        if (
+          httpError.status === 403 &&
+          httpError.message?.includes("rate limit exceeded")
+        ) {
+          throw new Error(
+            "GitHub API rate limit exceeded. Please wait a few minutes before trying again."
+          );
+        }
+      }
+
       throw new Error("Failed to create repository");
     }
   }

@@ -16,12 +16,6 @@ export default function Home() {
             >
               Configure GitHub
             </Link>
-            <Link
-              href="/debug-oauth"
-              className="inline-flex items-center rounded-md border border-border px-3 py-2 text-xs font-medium hover:bg-muted transition"
-            >
-              Debug OAuth
-            </Link>
             <ThemeSwitcher />
             <AuthButton />
           </div>

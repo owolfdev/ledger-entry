@@ -33,19 +33,31 @@ export function RepoSelection({ onRepoConnected }: RepoSelectionProps) {
   const [mode, setMode] = useState<SelectionMode>("select");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [manualRepo, setManualRepo] = useState({ owner: "", name: "" });
+  const [rateLimitReset, setRateLimitReset] = useState<Date | null>(null);
 
   const fetchRepos = async () => {
     try {
       setIsLoading(true);
       setError(null);
 
-      const response = await fetch("/api/ledger/repos");
+      // Just get the repository list without scanning
+      const response = await fetch("/api/github/repositories");
       if (!response.ok) {
+        const errorData = await response.json();
+        if (errorData.error?.includes("rate limit")) {
+          setError(
+            "GitHub API rate limit exceeded. Please wait a few minutes or manually enter repository details below."
+          );
+          // Set rate limit reset time (approximately 1 hour from now)
+          setRateLimitReset(new Date(Date.now() + 60 * 60 * 1000));
+          return;
+        }
         throw new Error("Failed to fetch repositories");
       }
 
       const data = await response.json();
-      setRepos(data.allRepos);
+      setRepos(data.repos);
     } catch (err) {
       console.error("Error fetching repositories:", err);
       setError(err instanceof Error ? err.message : "Unknown error");
@@ -129,14 +141,81 @@ export function RepoSelection({ onRepoConnected }: RepoSelectionProps) {
     setMode("select");
   };
 
-  const handleSelectRepo = (repo: RepoInfo) => {
-    setSelectedRepo(repo);
-    setMode("scanning");
+  const handleSelectRepo = async (repo: RepoInfo) => {
+    try {
+      setIsLoading(true);
+      setError(null);
+
+      // Check compatibility for the selected repo only
+      const response = await fetch("/api/github/check-compatibility", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          owner: repo.full_name.split("/")[0],
+          repo: repo.name,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to check repository compatibility");
+      }
+
+      const data = await response.json();
+
+      // Update the repo with the compatibility info
+      const updatedRepo = {
+        ...repo,
+        ledgerStructure: data.ledgerStructure,
+      };
+
+      setSelectedRepo(updatedRepo);
+      setMode("scanning");
+    } catch (err) {
+      console.error("Error checking repository compatibility:", err);
+      setError(err instanceof Error ? err.message : "Unknown error");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleBackToSelection = () => {
     setSelectedRepo(null);
     setMode("select");
+  };
+
+  const handleManualRepoSubmit = async () => {
+    if (!manualRepo.owner || !manualRepo.name) {
+      setError("Please enter both owner and repository name");
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      setError(null);
+
+      // Create a mock repo object for manual entry
+      const mockRepo: RepoInfo = {
+        id: 0, // Will be replaced when we can fetch real data
+        name: manualRepo.name,
+        full_name: `${manualRepo.owner}/${manualRepo.name}`,
+        description: "Manually entered repository",
+        private: false,
+        html_url: `https://github.com/${manualRepo.owner}/${manualRepo.name}`,
+        clone_url: `https://github.com/${manualRepo.owner}/${manualRepo.name}.git`,
+        default_branch: "main",
+        permissions: { admin: true, push: true, pull: true },
+      };
+
+      setSelectedRepo(mockRepo);
+      setMode("scanning");
+    } catch (err) {
+      console.error("Error with manual repo:", err);
+      setError(err instanceof Error ? err.message : "Unknown error");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   // Initial load
@@ -159,17 +238,90 @@ export function RepoSelection({ onRepoConnected }: RepoSelectionProps) {
 
   if (error) {
     return (
-      <Card>
-        <CardContent className="py-8">
-          <div className="text-center space-y-4">
-            <p className="text-red-600 dark:text-red-400">{error}</p>
-            <Button onClick={fetchRepos} variant="outline">
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Try Again
+      <div className="space-y-6">
+        <Card>
+          <CardContent className="py-8">
+            <div className="text-center space-y-4">
+              <p className="text-red-600 dark:text-red-400">{error}</p>
+              {rateLimitReset && (
+                <p className="text-sm text-muted-foreground">
+                  Rate limit resets approximately at:{" "}
+                  {rateLimitReset.toLocaleTimeString()}
+                </p>
+              )}
+              <Button onClick={fetchRepos} variant="outline">
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Try Again
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Manual Repository Input */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-foreground">
+              <Search className="h-5 w-5 text-blue-500 dark:text-blue-400" />
+              Manual Repository Entry
+            </CardTitle>
+            <CardDescription className="text-muted-foreground">
+              Enter repository details manually when API is unavailable
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-foreground">
+                  Owner
+                </label>
+                <input
+                  type="text"
+                  placeholder="username or organization"
+                  value={manualRepo.owner}
+                  onChange={(e) =>
+                    setManualRepo((prev) => ({
+                      ...prev,
+                      owner: e.target.value,
+                    }))
+                  }
+                  className="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-foreground">
+                  Repository Name
+                </label>
+                <input
+                  type="text"
+                  placeholder="repository-name"
+                  value={manualRepo.name}
+                  onChange={(e) =>
+                    setManualRepo((prev) => ({ ...prev, name: e.target.value }))
+                  }
+                  className="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground"
+                />
+              </div>
+            </div>
+            <Button
+              onClick={handleManualRepoSubmit}
+              disabled={isLoading || !manualRepo.owner || !manualRepo.name}
+              className="w-full"
+            >
+              {isLoading ? (
+                <>
+                  <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                  Processing...
+                </>
+              ) : (
+                <>
+                  <Search className="h-4 w-4 mr-2" />
+                  Check Repository
+                </>
+              )}
             </Button>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      </div>
     );
   }
 
@@ -256,6 +408,13 @@ export function RepoSelection({ onRepoConnected }: RepoSelectionProps) {
                 A new repository will be created with all the required files and
                 folders for your ledger.
               </p>
+              <div className="mt-3 p-2 bg-yellow-50 dark:bg-yellow-950 rounded-md">
+                <p className="text-xs text-yellow-700 dark:text-yellow-300">
+                  ⚠️ <strong>Rate Limit Active:</strong> GitHub API rate limit
+                  is currently exceeded. You can still select an existing
+                  repository from the dropdown above.
+                </p>
+              </div>
             </CardContent>
           </Card>
         </div>

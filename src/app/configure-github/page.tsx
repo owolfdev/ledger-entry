@@ -21,6 +21,7 @@ export default function ConfigureGitHubPage() {
 
   const checkConnectedRepo = async () => {
     try {
+      // Just check if there's a connected repo, don't scan all repos
       const response = await fetch("/api/ledger/repos");
       if (response.ok) {
         const data = await response.json();

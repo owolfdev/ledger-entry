@@ -1,10 +1,19 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { getGitHubClient } from "@/lib/github/server";
-import { getConnectedRepo } from "@/lib/ledger/repo-db";
+import { scanLedgerStructure } from "@/lib/ledger/repo-scanner";
 
-export async function GET() {
+export async function POST(request: NextRequest) {
   try {
+    const { owner, repo } = await request.json();
+
+    if (!owner || !repo) {
+      return NextResponse.json(
+        { error: "Owner and repo are required" },
+        { status: 400 }
+      );
+    }
+
     const supabase = await createClient();
     const {
       data: { user },
@@ -26,14 +35,20 @@ export async function GET() {
       );
     }
 
-    // Get currently connected repo (no bulk scanning)
-    const connectedRepo = await getConnectedRepo(user.id);
+    // Only scan the selected repository
+    const ledgerStructure = await scanLedgerStructure(
+      githubClient,
+      owner,
+      repo
+    );
 
     return NextResponse.json({
-      connectedRepo,
+      owner,
+      repo,
+      ledgerStructure,
     });
   } catch (error) {
-    console.error("Error fetching repositories:", error);
+    console.error("Error checking repository compatibility:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

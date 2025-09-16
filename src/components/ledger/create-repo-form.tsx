@@ -64,7 +64,16 @@ export function CreateRepoForm({
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to create repository");
+
+        // Check if it's a rate limit error
+        if (errorData.error?.includes("rate limit")) {
+          setError(
+            `${errorData.error}\n\n💡 **Alternative:** You can select an existing repository instead of creating a new one.`
+          );
+        } else {
+          setError(errorData.error || "Failed to create repository");
+        }
+        return;
       }
 
       const result = await response.json();
@@ -138,6 +147,12 @@ export function CreateRepoForm({
           {error && (
             <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-md">
               <p className="text-sm text-destructive">{error}</p>
+              {error.includes("rate limit") && (
+                <p className="text-xs text-muted-foreground mt-2">
+                  💡 <strong>Tip:</strong> You can also select an existing
+                  repository instead of creating a new one.
+                </p>
+              )}
             </div>
           )}
 

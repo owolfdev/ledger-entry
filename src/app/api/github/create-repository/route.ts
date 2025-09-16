@@ -9,6 +9,7 @@ export async function POST(request: NextRequest) {
     console.log("Create repository API called");
     const { name, description, isPrivate = true } = await request.json();
     console.log("Request data:", { name, description, isPrivate });
+    console.log("Timestamp:", new Date().toISOString());
 
     if (!name) {
       return NextResponse.json(
@@ -42,6 +43,29 @@ export async function POST(request: NextRequest) {
     }
 
     console.log("GitHub client created successfully");
+
+    // Check rate limit status before making the call
+    try {
+      const rateLimitResponse = await fetch(
+        "https://api.github.com/rate_limit",
+        {
+          headers: {
+            Authorization: `token ${githubClient.getAuthToken()}`,
+            Accept: "application/vnd.github.v3+json",
+          },
+        }
+      );
+      if (rateLimitResponse.ok) {
+        const rateLimitData = await rateLimitResponse.json();
+        console.log("GitHub rate limit status:", {
+          remaining: rateLimitData.rate.remaining,
+          limit: rateLimitData.rate.limit,
+          reset: new Date(rateLimitData.rate.reset * 1000).toISOString(),
+        });
+      }
+    } catch (rateLimitError) {
+      console.log("Could not check rate limit:", rateLimitError);
+    }
 
     // Create the repository
     console.log("Creating repository with options:", {
@@ -136,7 +160,7 @@ export async function POST(request: NextRequest) {
 
     // Check if it's a GitHub API error
     if (error && typeof error === "object" && "status" in error) {
-      const githubError = error as { status: number };
+      const githubError = error as { status: number; message?: string };
       if (githubError.status === 422) {
         // Repository name already exists
         return NextResponse.json(
@@ -147,7 +171,17 @@ export async function POST(request: NextRequest) {
           { status: 422 }
         );
       } else if (githubError.status === 403) {
-        // Permission denied
+        // Check if it's a rate limit error
+        if (githubError.message?.includes("rate limit exceeded")) {
+          return NextResponse.json(
+            {
+              error:
+                "GitHub API rate limit exceeded. Please wait a few minutes before trying again. You can also try selecting an existing repository instead.",
+            },
+            { status: 429 }
+          );
+        }
+        // Other permission denied errors
         return NextResponse.json(
           { error: "Permission denied. Please check your GitHub access." },
           { status: 403 }

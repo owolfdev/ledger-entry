@@ -1,36 +1,40 @@
 import { NextResponse } from "next/server";
-import { getUserGitHubRepositories } from "@/lib/github/server";
-import { getPublicRepositories } from "@/lib/github/public";
 import { createClient } from "@/lib/supabase/server";
+import { getGitHubClient } from "@/lib/github/server";
 
 export async function GET() {
   try {
-    // Try to get repositories with GitHub token first
-    let repositories = await getUserGitHubRepositories();
+    const supabase = await createClient();
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
 
-    // If no repositories found (likely due to missing token), try public API
-    if (repositories.length === 0) {
-      const supabase = await createClient();
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
-      if (user?.user_metadata?.user_name) {
-        console.log(
-          "Falling back to public GitHub API for user:",
-          user.user_metadata.user_name
-        );
-        repositories = await getPublicRepositories(
-          user.user_metadata.user_name
-        );
-      }
+    if (userError || !user) {
+      return NextResponse.json(
+        { error: "User not authenticated" },
+        { status: 401 }
+      );
     }
 
-    return NextResponse.json({ repositories });
+    const githubClient = await getGitHubClient();
+    if (!githubClient) {
+      return NextResponse.json(
+        { error: "GitHub client not available" },
+        { status: 500 }
+      );
+    }
+
+    // Just get the repository list without scanning
+    const repos = await githubClient.getUserRepositories();
+
+    return NextResponse.json({
+      repos,
+    });
   } catch (error) {
     console.error("Error fetching repositories:", error);
     return NextResponse.json(
-      { error: "Failed to fetch repositories" },
+      { error: "Internal server error" },
       { status: 500 }
     );
   }
