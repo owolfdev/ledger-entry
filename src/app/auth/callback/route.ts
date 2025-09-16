@@ -6,18 +6,45 @@ export async function GET(request: NextRequest) {
   const code = searchParams.get("code");
   const next = searchParams.get("next") ?? "/configure-github";
 
+  console.log("=== OAUTH CALLBACK DEBUG ===");
+  console.log("OAuth callback - URL:", request.url);
+  console.log(
+    "OAuth callback - searchParams:",
+    Object.fromEntries(searchParams.entries())
+  );
+  console.log("OAuth callback - code:", code);
+  console.log("OAuth callback - next:", next);
+  console.log("OAuth callback - origin:", origin);
+
+  // Check if this is an error callback
+  const error = searchParams.get("error");
+  const errorDescription = searchParams.get("error_description");
+  if (error) {
+    console.error("OAuth error received:", error);
+    console.error("Error description:", errorDescription);
+    return NextResponse.redirect(
+      `${origin}/auth/error?error=${encodeURIComponent(
+        errorDescription || error
+      )}`
+    );
+  }
+
   if (code) {
     const supabase = await createClient();
 
     try {
+      console.log("Attempting to exchange code for session...");
       const { data, error } = await supabase.auth.exchangeCodeForSession(code);
 
       if (error) {
         console.error("OAuth callback error:", error);
+        console.error("Error details:", JSON.stringify(error, null, 2));
         return NextResponse.redirect(
           `${origin}/auth/error?error=${encodeURIComponent(error.message)}`
         );
       }
+
+      console.log("Code exchange successful, data:", data);
 
       if (data.user) {
         console.log("OAuth successful, user:", data.user.email);

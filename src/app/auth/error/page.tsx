@@ -17,16 +17,39 @@ export default async function Page({
                 Sorry, something went wrong.
               </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-4">
               {params?.error ? (
-                <p className="text-sm text-muted-foreground">
-                  Code error: {params.error}
-                </p>
+                <div>
+                  <p className="text-sm text-muted-foreground">
+                    Code error: {params.error}
+                  </p>
+                  <div className="mt-4 p-3 bg-muted/30 rounded-md">
+                    <p className="text-xs text-muted-foreground">
+                      <strong>Debug info:</strong>
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Error: {params.error}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      This usually means the OAuth callback didn't receive the
+                      expected authorization code.
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Check that the redirect URL is properly configured in
+                      Supabase.
+                    </p>
+                  </div>
+                </div>
               ) : (
                 <p className="text-sm text-muted-foreground">
                   An unspecified error occurred.
                 </p>
               )}
+              <div className="pt-4">
+                <a href="/" className="text-sm text-primary hover:underline">
+                  ← Back to home
+                </a>
+              </div>
             </CardContent>
           </Card>
         </div>
