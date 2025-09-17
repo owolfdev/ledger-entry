@@ -2,163 +2,120 @@
 
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Github } from "lucide-react";
-import { useState } from "react";
-import { getBaseUrl } from "@/lib/utils";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { User, LogOut, Github } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import Image from "next/image";
 
-interface GitHubAuthButtonProps {
-  mode?: "signin" | "signup";
-  className?: string;
+interface UserData {
+  email?: string;
+  user_metadata?: {
+    user_name?: string;
+    name?: string;
+    avatar_url?: string;
+  };
 }
 
-export function GitHubAuthButton({
-  mode = "signin",
-  className,
-}: GitHubAuthButtonProps) {
-  const [isLoading, setIsLoading] = useState(false);
+export function GitHubAuthButton() {
+  const [user, setUser] = useState<UserData | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const router = useRouter();
 
-  const handleGitHubAuth = async () => {
-    const supabase = createClient();
-    setIsLoading(true);
+  useEffect(() => {
+    const getUser = async () => {
+      try {
+        const supabase = createClient();
+        const {
+          data: { user: userData },
+        } = await supabase.auth.getUser();
+        setUser(userData);
+      } catch (error) {
+        console.error("Error getting user:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-    const redirectUrl = `${getBaseUrl()}/auth/callback?next=/configure-github`;
-    console.log("=== GITHUB AUTH DEBUG ===");
-    console.log("GitHub auth - redirectUrl:", redirectUrl);
-    console.log("GitHub auth - getBaseUrl():", getBaseUrl());
-    console.log(
-      "Current URL:",
-      typeof window !== "undefined" ? window.location.href : "undefined"
-    );
-    console.log("Environment variables:");
-    console.log("- NEXT_PUBLIC_SITE_URL:", process.env.NEXT_PUBLIC_SITE_URL);
-    console.log("- NODE_ENV:", process.env.NODE_ENV);
+    getUser();
+  }, []);
 
+  const handleSignOut = async () => {
     try {
-      console.log("Initiating OAuth with Supabase...");
-      const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: "github",
-        options: {
-          redirectTo: redirectUrl,
-          scopes: "repo user:email",
-          queryParams: {
-            access_type: "offline",
-            prompt: "consent",
-          },
-        },
-      });
-
-      if (error) {
-        console.error("GitHub auth error:", error);
-        console.error("Error details:", JSON.stringify(error, null, 2));
-        alert(`GitHub authentication failed: ${error.message}`);
-        return;
-      }
-
-      console.log("GitHub auth initiated successfully:", data);
-      console.log("OAuth URL:", data?.url);
-
-      if (data?.url) {
-        console.log("Redirecting to GitHub OAuth...");
-        // The redirect should happen automatically, but let's log it
-      } else {
-        console.warn("No OAuth URL returned from Supabase");
-      }
+      const supabase = createClient();
+      await supabase.auth.signOut();
+      router.push("/auth/login");
     } catch (error) {
-      console.error("GitHub auth error:", error);
-      console.error("Error details:", JSON.stringify(error, null, 2));
-      alert("GitHub authentication failed. Please check your configuration.");
-    } finally {
-      setIsLoading(false);
+      console.error("Error signing out:", error);
     }
   };
 
+  if (isLoading) {
+    return (
+      <Button variant="ghost" size="sm" disabled>
+        <User className="h-4 w-4" />
+      </Button>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="flex gap-2">
+        <Button asChild size="sm" variant="outline">
+          <a href="/auth/login">Sign in</a>
+        </Button>
+        <Button asChild size="sm" variant="default">
+          <a href="/auth/sign-up">Sign up</a>
+        </Button>
+      </div>
+    );
+  }
+
+  const githubUsername =
+    user.user_metadata?.user_name || user.user_metadata?.name || "User";
+  const avatarUrl = user.user_metadata?.avatar_url;
+  const displayName = githubUsername;
+
   return (
-    <div className="space-y-2">
-      <Button
-        variant="outline"
-        className={`w-full ${className}`}
-        onClick={handleGitHubAuth}
-        disabled={isLoading}
-      >
-        <Github className="mr-2 h-4 w-4" />
-        {isLoading
-          ? "Connecting..."
-          : mode === "signin"
-          ? "Continue with GitHub"
-          : "Sign up with GitHub"}
-      </Button>
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={async () => {
-          console.log("Debug info:");
-          console.log("getBaseUrl():", getBaseUrl());
-          console.log(
-            "window.location.origin:",
-            typeof window !== "undefined" ? window.location.origin : "undefined"
-          );
-          console.log(
-            "NEXT_PUBLIC_SITE_URL:",
-            process.env.NEXT_PUBLIC_SITE_URL
-          );
-
-          // Test Supabase client
-          const supabase = createClient();
-          console.log("Supabase client created:", !!supabase);
-          console.log("Supabase URL:", process.env.NEXT_PUBLIC_SUPABASE_URL);
-          console.log(
-            "Supabase Key:",
-            process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_OR_ANON_KEY
-              ? "Present"
-              : "Missing"
-          );
-
-          // Test OAuth URL generation
-          const redirectUrl = `${getBaseUrl()}/auth/callback?next=/configure-github`;
-          console.log("Generated redirect URL:", redirectUrl);
-
-          // Test if we can get current session
-          try {
-            const { data: session, error: sessionError } =
-              await supabase.auth.getSession();
-            console.log("Current session:", session);
-            console.log("Session error:", sessionError);
-          } catch (err) {
-            console.error("Session check failed:", err);
-          }
-
-          // Test if we can initiate OAuth (without actually doing it)
-          try {
-            const { data, error } = await supabase.auth.signInWithOAuth({
-              provider: "github",
-              options: {
-                redirectTo: redirectUrl,
-                scopes: "repo user:email",
-                queryParams: {
-                  access_type: "offline",
-                  prompt: "consent",
-                },
-              },
-            });
-            console.log("OAuth initiation test - data:", data);
-            console.log("OAuth initiation test - error:", error);
-
-            if (error) {
-              console.error("OAuth configuration issue detected:");
-              console.error("- Check GitHub OAuth app configuration");
-              console.error("- Check Supabase GitHub provider settings");
-              console.error(
-                "- Verify callback URL matches: https://afhwkquktdnasvhyudez.supabase.co/auth/v1/callback"
-              );
-            }
-          } catch (err) {
-            console.error("OAuth initiation test failed:", err);
-          }
-        }}
-        className="w-full text-xs"
-      >
-        🧪 Debug OAuth URL
-      </Button>
-    </div>
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" size="sm" className="flex items-center gap-2">
+          {avatarUrl ? (
+            <Image
+              src={avatarUrl}
+              alt={displayName}
+              width={24}
+              height={24}
+              className="h-6 w-6 rounded-full"
+            />
+          ) : (
+            <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center">
+              <Github className="h-4 w-4" />
+            </div>
+          )}
+          <span className="hidden sm:inline">{displayName}</span>
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-56">
+        <DropdownMenuLabel className="font-normal">
+          <div className="flex flex-col space-y-1">
+            <p className="text-sm font-medium leading-none">{displayName}</p>
+            <p className="text-xs text-muted-foreground">{user.email}</p>
+          </div>
+        </DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onClick={handleSignOut} className="text-red-600">
+          <LogOut className="mr-2 h-4 w-4" />
+          Sign out
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }

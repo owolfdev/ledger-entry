@@ -104,7 +104,7 @@ export function LoginForm({
                 </span>
               </div>
             </div>
-            <GitHubAuthButton mode="signin" />
+            <GitHubAuthButton />
             <div className="mt-4 text-center text-sm">
               Don&apos;t have an account?{" "}
               <Link

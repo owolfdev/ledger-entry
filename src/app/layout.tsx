@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist } from "next/font/google";
 import { ThemeProvider } from "next-themes";
+import { LayoutProvider } from "@/contexts/layout-context";
 import "./globals.css";
 
 const defaultUrl = process.env.VERCEL_URL
@@ -25,15 +26,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body className={`${geistSans.className} antialiased`}>
+    <html lang="en" suppressHydrationWarning className="h-full">
+      <body className={`${geistSans.className} antialiased h-full`}>
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
           enableSystem
           disableTransitionOnChange
         >
-          {children}
+          <LayoutProvider>{children}</LayoutProvider>
         </ThemeProvider>
       </body>
     </html>

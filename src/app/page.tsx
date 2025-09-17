@@ -1,4 +1,4 @@
-import { AuthButton } from "@/components/auth-button";
+import { GitHubAuthButton } from "@/components/github-auth-button";
 import { ThemeSwitcher } from "@/components/theme-switcher";
 import Link from "next/link";
 export default function Home() {
@@ -11,13 +11,19 @@ export default function Home() {
           </div>
           <div className="flex items-center gap-3">
             <Link
+              href="/ledger"
+              className="inline-flex items-center rounded-md bg-primary text-primary-foreground px-3 py-2 text-xs font-medium hover:opacity-90 transition"
+            >
+              Open Ledger Interface
+            </Link>
+            <Link
               href="/configure-github"
               className="inline-flex items-center rounded-md bg-foreground text-background px-3 py-2 text-xs font-medium hover:opacity-90 transition"
             >
               Configure GitHub
             </Link>
             <ThemeSwitcher />
-            <AuthButton />
+            <GitHubAuthButton />
           </div>
         </div>
       </nav>
