@@ -14,6 +14,7 @@ import { User, LogOut, Github } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import Image from "next/image";
+import { getBaseUrl } from "@/lib/utils";
 
 interface UserData {
   email?: string;
@@ -51,7 +52,7 @@ export function GitHubAuthButton() {
     try {
       const supabase = createClient();
       await supabase.auth.signOut();
-      router.push("/auth/login");
+      router.push("/");
     } catch (error) {
       console.error("Error signing out:", error);
     }
@@ -65,16 +66,36 @@ export function GitHubAuthButton() {
     );
   }
 
+  const handleGitHubAuth = async () => {
+    try {
+      const supabase = createClient();
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: "github",
+        options: {
+          redirectTo: `${getBaseUrl()}/auth/callback?next=/ledger`,
+          scopes: "repo user:email",
+        },
+      });
+
+      if (error) {
+        console.error("GitHub OAuth error:", error);
+        return;
+      }
+
+      if (data?.url) {
+        window.location.href = data.url;
+      }
+    } catch (error) {
+      console.error("GitHub OAuth error:", error);
+    }
+  };
+
   if (!user) {
     return (
-      <div className="flex gap-2">
-        <Button asChild size="sm" variant="outline">
-          <a href="/auth/login">Sign in</a>
-        </Button>
-        <Button asChild size="sm" variant="default">
-          <a href="/auth/sign-up">Sign up</a>
-        </Button>
-      </div>
+      <Button onClick={handleGitHubAuth} size="sm" variant="default">
+        <Github className="h-4 w-4 mr-2" />
+        Connect to GitHub
+      </Button>
     );
   }
 

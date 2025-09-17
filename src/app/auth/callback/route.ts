@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
-  const next = searchParams.get("next") ?? "/configure-github";
+  const next = searchParams.get("next") ?? "/ledger";
 
   console.log("=== OAUTH CALLBACK DEBUG ===");
   console.log("OAuth callback - URL:", request.url);
