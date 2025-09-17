@@ -21,23 +21,16 @@ export default async function RepositoryPage({
   const { owner, repo } = await params;
   const { path = "", branch = "main" } = await searchParams;
 
-  let files = [];
-
   try {
     // Try to get files with GitHub token first
     const githubClient = await getGitHubClient();
 
     if (githubClient) {
-      files = await githubClient.getRepositoryContents(
-        owner,
-        repo,
-        path,
-        branch
-      );
+      await githubClient.getRepositoryContents(owner, repo, path, branch);
     } else {
       // Fallback to public API
       console.log("Using public GitHub API for repository contents");
-      files = await getPublicRepositoryContents(owner, repo, path, branch);
+      await getPublicRepositoryContents(owner, repo, path, branch);
     }
 
     return (
@@ -55,9 +48,10 @@ export default async function RepositoryPage({
           <FileBrowser
             owner={owner}
             repo={repo}
-            files={files}
-            currentPath={path}
-            currentBranch={branch}
+            onFileSelect={(filePath) => {
+              console.log("Selected file:", filePath);
+            }}
+            selectedFile={path}
           />
         </div>
       </div>

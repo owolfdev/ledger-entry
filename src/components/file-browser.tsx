@@ -1,359 +1,176 @@
 "use client";
 
-import { GitHubFile } from "@/lib/github/client";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ledger/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import {
-  File,
+  FileText,
   Folder,
-  ArrowLeft,
-  Download,
-  Edit,
-  Trash2,
-  Plus,
-  GitBranch,
+  FolderOpen,
+  ChevronRight,
+  ChevronDown,
+  RefreshCw,
 } from "lucide-react";
-import { useState } from "react";
-import { Textarea } from "@/components/ui/textarea";
+
+interface FileNode {
+  name: string;
+  path: string;
+  type: "file" | "dir";
+  children?: FileNode[];
+  expanded?: boolean;
+}
 
 interface FileBrowserProps {
   owner: string;
   repo: string;
-  files: GitHubFile[];
-  currentPath: string;
-  currentBranch: string;
+  onFileSelect: (path: string) => void;
+  selectedFile?: string;
 }
 
 export function FileBrowser({
   owner,
   repo,
-  files,
-  currentPath,
-  currentBranch,
+  onFileSelect,
+  selectedFile,
 }: FileBrowserProps) {
-  const [selectedFile, setSelectedFile] = useState<GitHubFile | null>(null);
-  const [fileContent, setFileContent] = useState<string>("");
-  const [isLoading, setIsLoading] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
-  const [editedContent, setEditedContent] = useState<string>("");
-  const [isSaving, setIsSaving] = useState(false);
+  const [files, setFiles] = useState<FileNode[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const navigateToPath = (path: string) => {
-    const url = new URL(window.location.href);
-    url.searchParams.set("path", path);
-    window.location.href = url.toString();
-  };
+  const fetchFiles = useCallback(async () => {
+    setLoading(true);
+    setError(null);
 
-  const goBack = () => {
-    const pathParts = currentPath.split("/").filter(Boolean);
-    pathParts.pop();
-    const newPath = pathParts.join("/");
-    navigateToPath(newPath);
-  };
-
-  const handleFileClick = async (file: GitHubFile) => {
-    if (file.type === "dir") {
-      navigateToPath(file.path);
-    } else {
-      setSelectedFile(file);
-      setIsLoading(true);
-      setIsEditing(false);
-
-      try {
-        // This would need to be implemented as an API route
-        const response = await fetch(
-          `/api/configure-github/${owner}/${repo}/files/${file.path}?branch=${currentBranch}`
-        );
-        if (response.ok) {
-          const content = await response.text();
-          setFileContent(content);
-          setEditedContent(content);
-        } else {
-          setFileContent("Error loading file content");
-        }
-      } catch {
-        setFileContent("Error loading file content");
-      } finally {
-        setIsLoading(false);
-      }
-    }
-  };
-
-  const handleEdit = () => {
-    setIsEditing(true);
-    setEditedContent(fileContent);
-  };
-
-  const handleCancel = () => {
-    setIsEditing(false);
-    setEditedContent(fileContent);
-  };
-
-  const handleSave = async () => {
-    if (!selectedFile) return;
-
-    setIsSaving(true);
     try {
       const response = await fetch(
-        `/api/configure-github/${owner}/${repo}/files/${selectedFile.path}`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            content: editedContent,
-            branch: currentBranch,
-            message: `Update ${selectedFile.name}`,
-          }),
-        }
+        `/api/github/files?owner=${owner}&repo=${repo}`
       );
-
-      if (response.ok) {
-        setFileContent(editedContent);
-        setIsEditing(false);
-        alert("File saved successfully!");
-      } else {
-        const error = await response.text();
-        alert(`Error saving file: ${error}`);
+      if (!response.ok) {
+        throw new Error("Failed to fetch files");
       }
-    } catch (error) {
-      alert(`Error saving file: ${error}`);
+
+      const data = await response.json();
+      setFiles(data.files || []);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to fetch files");
     } finally {
-      setIsSaving(false);
+      setLoading(false);
     }
+  }, [owner, repo]);
+
+  useEffect(() => {
+    if (owner && repo) {
+      fetchFiles();
+    }
+  }, [owner, repo, fetchFiles]);
+
+  const toggleExpanded = (path: string) => {
+    const updateNode = (nodes: FileNode[]): FileNode[] => {
+      return nodes.map((node) => {
+        if (node.path === path) {
+          return { ...node, expanded: !node.expanded };
+        }
+        if (node.children) {
+          return { ...node, children: updateNode(node.children) };
+        }
+        return node;
+      });
+    };
+    setFiles(updateNode(files));
   };
 
-  const formatFileSize = (bytes: number) => {
-    if (bytes === 0) return "0 B";
-    const k = 1024;
-    const sizes = ["B", "KB", "MB", "GB"];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
-  };
+  const renderFileNode = (node: FileNode, depth = 0) => {
+    const isSelected = selectedFile === node.path;
+    const isExpanded = node.expanded;
+    const hasChildren = node.children && node.children.length > 0;
 
-  const getFileIcon = (file: GitHubFile) => {
-    if (file.type === "dir") {
-      return <Folder className="h-4 w-4 text-blue-500" />;
-    }
-
-    // Get file extension for better icon display
-    const extension = file.name.split(".").pop()?.toLowerCase();
-    const iconClass = "h-4 w-4";
-
-    // You could add more specific icons based on file type
-    if (["js", "ts", "jsx", "tsx"].includes(extension || "")) {
-      return <File className={`${iconClass} text-yellow-500`} />;
-    } else if (["css", "scss", "sass"].includes(extension || "")) {
-      return <File className={`${iconClass} text-blue-400`} />;
-    } else if (["html", "htm"].includes(extension || "")) {
-      return <File className={`${iconClass} text-orange-500`} />;
-    } else if (["json", "yaml", "yml"].includes(extension || "")) {
-      return <File className={`${iconClass} text-green-500`} />;
-    } else if (["md", "txt"].includes(extension || "")) {
-      return <File className={`${iconClass} text-gray-400`} />;
-    }
-
-    return <File className={`${iconClass} text-gray-500`} />;
+    return (
+      <div key={node.path}>
+        <div
+          className={`flex items-center gap-1 py-1 px-2 cursor-pointer hover:bg-muted/50 rounded ${
+            isSelected ? "bg-primary/10 text-primary" : ""
+          }`}
+          style={{ paddingLeft: `${depth * 16 + 8}px` }}
+          onClick={() => {
+            if (node.type === "file") {
+              onFileSelect(node.path);
+            } else {
+              toggleExpanded(node.path);
+            }
+          }}
+        >
+          {node.type === "dir" ? (
+            <>
+              {hasChildren ? (
+                isExpanded ? (
+                  <ChevronDown className="w-4 h-4" />
+                ) : (
+                  <ChevronRight className="w-4 h-4" />
+                )
+              ) : (
+                <div className="w-4 h-4" />
+              )}
+              {isExpanded ? (
+                <FolderOpen className="w-4 h-4 text-blue-500" />
+              ) : (
+                <Folder className="w-4 h-4 text-blue-500" />
+              )}
+            </>
+          ) : (
+            <>
+              <div className="w-4 h-4" />
+              <FileText className="w-4 h-4 text-gray-500" />
+            </>
+          )}
+          <span className="text-sm truncate">{node.name}</span>
+          {node.type === "file" && node.name.endsWith(".journal") && (
+            <Badge variant="secondary" className="ml-auto text-xs">
+              journal
+            </Badge>
+          )}
+        </div>
+        {node.type === "dir" && isExpanded && node.children && (
+          <div>
+            {node.children.map((child) => renderFileNode(child, depth + 1))}
+          </div>
+        )}
+      </div>
+    );
   };
 
   return (
-    <div className="grid gap-6 lg:grid-cols-2">
-      {/* File List */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2">
-              <GitBranch className="h-4 w-4" />
-              {currentBranch}
-            </CardTitle>
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={goBack}
-                disabled={!currentPath}
-              >
-                <ArrowLeft className="h-4 w-4 mr-1" />
-                Back
-              </Button>
-              <Button variant="outline" size="sm">
-                <Plus className="h-4 w-4 mr-1" />
-                New File
-              </Button>
-            </div>
-          </div>
+    <div className="h-full flex flex-col border-r bg-background">
+      <div className="p-3 border-b">
+        <div className="flex items-center justify-between mb-2">
+          <h3 className="font-semibold text-sm">Files</h3>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={fetchFiles}
+            disabled={loading}
+          >
+            <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
+          </Button>
+        </div>
+        <div className="text-xs text-muted-foreground">
+          {owner}/{repo}
+        </div>
+      </div>
 
-          {/* Breadcrumb Navigation */}
-          <div className="flex items-center gap-1 text-sm text-muted-foreground">
-            <button
-              onClick={() => navigateToPath("")}
-              className="hover:text-foreground transition-colors"
-            >
-              {owner}/{repo}
-            </button>
-            {currentPath && (
-              <>
-                <span>/</span>
-                {currentPath.split("/").map((part, index, array) => {
-                  const path = array.slice(0, index + 1).join("/");
-                  const isLast = index === array.length - 1;
-                  return (
-                    <span key={path}>
-                      {isLast ? (
-                        <span className="text-foreground font-medium">
-                          {part}
-                        </span>
-                      ) : (
-                        <button
-                          onClick={() => navigateToPath(path)}
-                          className="hover:text-foreground transition-colors"
-                        >
-                          {part}
-                        </button>
-                      )}
-                      {!isLast && <span>/</span>}
-                    </span>
-                  );
-                })}
-              </>
-            )}
+      <ScrollArea className="flex-1">
+        {loading ? (
+          <div className="p-4 text-center text-sm text-muted-foreground">
+            Loading files...
           </div>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-2">
-            {files.map((file) => (
-              <div
-                key={file.path}
-                className="flex items-center justify-between p-3 rounded-lg border hover:bg-muted/50 cursor-pointer transition-colors"
-                onClick={() => handleFileClick(file)}
-              >
-                <div className="flex items-center gap-3">
-                  {getFileIcon(file)}
-                  <div>
-                    <div className="font-medium">{file.name}</div>
-                    {file.type === "file" && (
-                      <div className="text-sm text-muted-foreground">
-                        {formatFileSize(file.size)}
-                      </div>
-                    )}
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  {file.type === "file" && file.download_url && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        window.open(file.download_url!, "_blank");
-                      }}
-                    >
-                      <Download className="h-4 w-4" />
-                    </Button>
-                  )}
-                  {file.type === "file" && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleFileClick(file);
-                        handleEdit();
-                      }}
-                    >
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                  )}
-                </div>
-              </div>
-            ))}
+        ) : error ? (
+          <div className="p-4 text-center text-sm text-destructive">
+            {error}
           </div>
-        </CardContent>
-      </Card>
-
-      {/* File Content */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center justify-between">
-            {selectedFile ? selectedFile.name : "Select a file"}
-            {selectedFile && (
-              <div className="flex gap-2">
-                {!isEditing ? (
-                  <>
-                    <Button variant="outline" size="sm" onClick={handleEdit}>
-                      <Edit className="h-4 w-4 mr-1" />
-                      Edit
-                    </Button>
-                    <Button variant="outline" size="sm">
-                      <Trash2 className="h-4 w-4 mr-1" />
-                      Delete
-                    </Button>
-                  </>
-                ) : (
-                  <>
-                    <Button
-                      variant="default"
-                      size="sm"
-                      onClick={handleSave}
-                      disabled={isSaving}
-                    >
-                      {isSaving ? "Saving..." : "Save"}
-                    </Button>
-                    <Button variant="outline" size="sm" onClick={handleCancel}>
-                      Cancel
-                    </Button>
-                  </>
-                )}
-              </div>
-            )}
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {selectedFile ? (
-            <div className="space-y-4">
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Badge variant="outline">{selectedFile.type}</Badge>
-                <span>{formatFileSize(selectedFile.size)}</span>
-                <span>•</span>
-                <span>{selectedFile.path}</span>
-              </div>
-
-              {isLoading ? (
-                <div className="flex items-center justify-center py-8">
-                  <div className="text-muted-foreground">
-                    Loading file content...
-                  </div>
-                </div>
-              ) : isEditing ? (
-                <div className="space-y-2">
-                  <Textarea
-                    value={editedContent}
-                    onChange={(e) => setEditedContent(e.target.value)}
-                    className="min-h-96 font-mono text-sm"
-                    placeholder="Edit file content..."
-                  />
-                  <div className="text-xs text-muted-foreground">
-                    Editing {selectedFile.name} • {editedContent.length}{" "}
-                    characters
-                  </div>
-                </div>
-              ) : (
-                <div className="bg-muted rounded-lg p-4">
-                  <pre className="text-sm overflow-auto max-h-96">
-                    {fileContent || "No content available"}
-                  </pre>
-                </div>
-              )}
-            </div>
-          ) : (
-            <div className="flex items-center justify-center py-8 text-muted-foreground">
-              Select a file to view its content
-            </div>
-          )}
-        </CardContent>
-      </Card>
+        ) : (
+          <div className="p-2">{files.map((node) => renderFileNode(node))}</div>
+        )}
+      </ScrollArea>
     </div>
   );
 }

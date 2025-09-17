@@ -24,6 +24,7 @@ import type React from "react";
 import { useState, useRef, useEffect, useCallback } from "react";
 import dynamic from "next/dynamic";
 import { useLayout } from "@/contexts/layout-context";
+import { useFileOperations } from "@/hooks/use-file-operations";
 
 // Dynamically import Monaco Editor to avoid SSR issues
 const Editor = dynamic(() => import("@monaco-editor/react"), {
@@ -99,6 +100,20 @@ export default function LedgerInterface() {
   const [cursorPosition, setCursorPosition] = useState({ line: 1, column: 1 });
   const [isEditorLoading, setIsEditorLoading] = useState(true);
 
+  // File operations state
+  const [repository, setRepository] = useState<{
+    owner: string;
+    repo: string;
+  } | null>(null);
+  const [availableFiles, setAvailableFiles] = useState<string[]>([]);
+  const [currentFilePath, setCurrentFilePath] = useState<string | null>(null);
+
+  // File operations hook
+  const { currentFile, loadFile } = useFileOperations({
+    owner: repository?.owner || "",
+    repo: repository?.repo || "",
+  });
+
   // Layout settings
   const {
     showTerminal,
@@ -140,6 +155,63 @@ export default function LedgerInterface() {
   useEffect(() => {
     addLog("info", "Ledger CLI Interface initialized");
   }, []);
+
+  // Load connected repository
+  useEffect(() => {
+    const loadRepository = async () => {
+      try {
+        const response = await fetch("/api/ledger/repos");
+        if (response.ok) {
+          const data = await response.json();
+          if (data.connectedRepo) {
+            setRepository({
+              owner: data.connectedRepo.repo_owner,
+              repo: data.connectedRepo.repo_name,
+            });
+            addLog(
+              "success",
+              `Connected to repository: ${data.connectedRepo.repo_full_name}`
+            );
+          } else {
+            addLog(
+              "warning",
+              "No repository connected. Use 'files' to see available files."
+            );
+          }
+        }
+      } catch {
+        addLog("error", "Failed to load repository information");
+      }
+    };
+
+    loadRepository();
+  }, []);
+
+  // Load available files when repository is connected
+  useEffect(() => {
+    const loadFiles = async () => {
+      if (!repository) return;
+
+      try {
+        const response = await fetch(
+          `/api/github/files?owner=${repository.owner}&repo=${repository.repo}`
+        );
+        if (response.ok) {
+          const data = await response.json();
+          const files = data.files || [];
+          const filePaths = files
+            .filter((file: { type: string }) => file.type === "file")
+            .map((file: { path: string }) => file.path);
+          setAvailableFiles(filePaths);
+          addLog("info", `Found ${filePaths.length} files in repository`);
+        }
+      } catch {
+        addLog("error", "Failed to load repository files");
+      }
+    };
+
+    loadFiles();
+  }, [repository]);
 
   // Toggle Vim mode on/off
   const toggleVimMode = () => {
@@ -203,6 +275,14 @@ export default function LedgerInterface() {
       commandInputRef.current.focus();
     }
   }, []);
+
+  // Sync editor content with loaded file
+  useEffect(() => {
+    if (currentFile) {
+      setLedgerContent(currentFile.content);
+      setIsModified(false);
+    }
+  }, [currentFile]);
 
   // Mobile detection removed - handled by LayoutToggles component
 
@@ -355,6 +435,41 @@ export default function LedgerInterface() {
         updateMessage("File saved successfully!", "success");
         break;
 
+      case "files":
+        addLog("info", "Available files:");
+        if (availableFiles.length === 0) {
+          addLog("info", "  No files found");
+        } else {
+          availableFiles.forEach((file) => addLog("info", `  ${file}`));
+        }
+        updateMessage(`Found ${availableFiles.length} files`, "info");
+        break;
+
+      case "load":
+        if (parts.length < 2) {
+          addLog("warning", "Usage: load <filepath>");
+          addLog("info", "Available files:");
+          if (availableFiles.length === 0) {
+            addLog("info", "  No files found");
+          } else {
+            availableFiles.forEach((file) => addLog("info", `  ${file}`));
+          }
+          updateMessage("Usage: load <filepath>", "warning");
+        } else {
+          const filePath = parts.slice(1).join(" ");
+          loadFile(filePath)
+            .then(() => {
+              setCurrentFilePath(filePath);
+              addLog("success", `Loaded file: ${filePath}`);
+              updateMessage(`Loaded file: ${filePath}`, "success");
+            })
+            .catch((error) => {
+              addLog("error", `Failed to load file: ${error.message}`);
+              updateMessage("Failed to load file", "error");
+            });
+        }
+        break;
+
       case "validate":
         addLog("info", "Validating ledger entries...");
         updateMessage("Validating entries...", "info");
@@ -380,12 +495,14 @@ export default function LedgerInterface() {
         addLog("info", "  balance, bal - Show account balances");
         addLog("info", "  accounts - List all accounts");
         addLog("info", "  add transaction - Add transaction template");
+        addLog("info", "  files - List available files in repository");
+        addLog("info", "  load <filepath> - Load a file from repository");
         addLog("info", "  save - Save current file");
         addLog("info", "  validate - Validate ledger entries");
         addLog("info", "  clear - Clear terminal output");
         addLog("info", "  help - Show this help message");
         updateMessage(
-          "Help displayed! Try 'balance' to see account balances.",
+          "Help displayed! Try 'files' to see available files.",
           "info"
         );
         break;
@@ -523,7 +640,7 @@ export default function LedgerInterface() {
               maxSize={75}
             >
               <EditorPanel
-                fileName={fileName}
+                fileName={currentFilePath || fileName}
                 isModified={isModified}
                 ledgerContent={ledgerContent}
                 cursorPosition={cursorPosition}
@@ -562,7 +679,7 @@ export default function LedgerInterface() {
           // Only editor visible
           <div className="h-full">
             <EditorPanel
-              fileName={fileName}
+              fileName={currentFilePath || fileName}
               isModified={isModified}
               ledgerContent={ledgerContent}
               cursorPosition={cursorPosition}
