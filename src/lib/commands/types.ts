@@ -59,7 +59,7 @@ export interface CommandContext {
 export interface CommandResult {
   success: boolean;
   message?: string;
-  data?: any;
+  data?: unknown;
   logs?: LogMessage[];
 }
 

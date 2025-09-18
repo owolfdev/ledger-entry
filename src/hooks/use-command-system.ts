@@ -1,9 +1,9 @@
 "use client";
 
-import { useCallback, useMemo } from "react";
+import { useCallback } from "react";
 import { commandRegistry } from "@/lib/commands/registry";
 import { parseCommand, validateCommandInput } from "@/lib/commands/parser";
-import type { CommandContext, LogMessage } from "@/lib/commands/types";
+import type { CommandContext } from "@/lib/commands/types";
 
 // Import all commands to register them
 import {

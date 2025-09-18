@@ -143,7 +143,7 @@ export default function LedgerInterface() {
   const lastFocusedRef = useRef<"editor" | "terminal">("terminal");
 
   // Add log function (defined early so it can be used in useEffect)
-  const addLog = (type: LogMessage["type"], message: string) => {
+  const addLog = useCallback((type: LogMessage["type"], message: string) => {
     const newLog: LogMessage = {
       id: typeof window !== "undefined" ? Date.now().toString() : "",
       type,
@@ -151,12 +151,12 @@ export default function LedgerInterface() {
       timestamp: typeof window !== "undefined" ? new Date() : new Date(0), // Use epoch for SSR
     };
     setLogs((prev) => [...prev, newLog]);
-  };
+  }, []);
 
   // Add initial log message on client side only
   useEffect(() => {
     addLog("info", "Ledger CLI Interface initialized");
-  }, []);
+  }, [addLog]);
 
   // Load connected repository
   useEffect(() => {
@@ -212,7 +212,7 @@ export default function LedgerInterface() {
     };
 
     loadRepository();
-  }, []);
+  }, [isConnectingToRepo, addLog]);
 
   // Load available files when repository is connected
   useEffect(() => {
@@ -261,7 +261,7 @@ export default function LedgerInterface() {
     };
 
     loadFiles();
-  }, [repository]);
+  }, [repository, isLoadingFiles, addLog]);
 
   // Toggle Vim mode on/off
   const toggleVimMode = () => {
@@ -408,13 +408,13 @@ export default function LedgerInterface() {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [showEditor, showTerminal, focusEditor, focusTerminal]);
 
-  const updateMessage = (
-    text: string,
-    type: "info" | "success" | "warning" | "error" = "info"
-  ) => {
-    setMessage(text);
-    setMessageType(type);
-  };
+  const updateMessage = useCallback(
+    (text: string, type: "info" | "success" | "warning" | "error" = "info") => {
+      setMessage(text);
+      setMessageType(type);
+    },
+    []
+  );
 
   // Create command context for the command system
   const commandContext: CommandContext = useMemo(

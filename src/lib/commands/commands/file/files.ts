@@ -47,8 +47,7 @@ export const filesCommand: Command = {
       // Function to render tree recursively with better formatting
       const renderTree = (
         items: { [key: string]: TreeNode },
-        indent = "  ",
-        isRoot = true
+        indent = "  "
       ) => {
         const sortedKeys = Object.keys(items).sort((a, b) => {
           const aIsDir = items[a].type === "dir";
@@ -85,7 +84,7 @@ export const filesCommand: Command = {
           }
 
           if (item.children) {
-            renderTree(item.children, `${indent}  `, false);
+            renderTree(item.children, `${indent}  `);
           }
         });
       };
