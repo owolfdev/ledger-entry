@@ -110,6 +110,42 @@ export class GitHubClient {
     }
   }
 
+  async getRepositoryTree(
+    owner: string,
+    repo: string,
+    branch: string = "main"
+  ): Promise<GitHubFile[]> {
+    try {
+      // Get the tree recursively
+      const { data: ref } = await this.octokit.git.getRef({
+        owner,
+        repo,
+        ref: `heads/${branch}`,
+      });
+
+      const { data: tree } = await this.octokit.git.getTree({
+        owner,
+        repo,
+        tree_sha: ref.object.sha,
+        recursive: "true",
+      });
+
+      return tree.tree
+        .filter((item) => item.type === "blob" || item.type === "tree")
+        .map((item) => ({
+          name: item.path.split("/").pop() || "",
+          path: item.path,
+          type: item.type === "blob" ? "file" : "dir",
+          size: item.size || 0,
+          download_url: item.type === "blob" ? item.url || null : null,
+          sha: item.sha,
+        }));
+    } catch (error) {
+      console.error("Error fetching repository tree:", error);
+      throw new Error("Failed to fetch repository tree");
+    }
+  }
+
   async getFileContent(
     owner: string,
     repo: string,

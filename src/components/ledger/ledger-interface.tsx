@@ -105,7 +105,9 @@ export default function LedgerInterface() {
     owner: string;
     repo: string;
   } | null>(null);
-  const [availableFiles, setAvailableFiles] = useState<string[]>([]);
+  const [repositoryItems, setRepositoryItems] = useState<
+    Array<{ name: string; path: string; type: string }>
+  >([]);
   const [currentFilePath, setCurrentFilePath] = useState<string | null>(null);
 
   // File operations hook
@@ -198,12 +200,12 @@ export default function LedgerInterface() {
         );
         if (response.ok) {
           const data = await response.json();
-          const files = data.files || [];
-          const filePaths = files
-            .filter((file: { type: string }) => file.type === "file")
-            .map((file: { path: string }) => file.path);
-          setAvailableFiles(filePaths);
-          addLog("info", `Found ${filePaths.length} files in repository`);
+          const items = data.files || [];
+          setRepositoryItems(items);
+          const fileCount = items.filter(
+            (item: { type: string }) => item.type === "file"
+          ).length;
+          addLog("info", `Found ${fileCount} files in repository`);
         }
       } catch {
         addLog("error", "Failed to load repository files");
@@ -436,23 +438,131 @@ export default function LedgerInterface() {
         break;
 
       case "files":
-        addLog("info", "Available files:");
-        if (availableFiles.length === 0) {
-          addLog("info", "  No files found");
+        addLog("info", "Repository structure:");
+        if (repositoryItems.length === 0) {
+          addLog("info", "  No items found");
         } else {
-          availableFiles.forEach((file) => addLog("info", `  ${file}`));
+          // Group items by directory for better organization
+          const itemsByDir: {
+            [key: string]: Array<{ name: string; type: string }>;
+          } = {};
+          repositoryItems.forEach((item) => {
+            const parts = item.path.split("/");
+            if (parts.length === 1) {
+              // Root level item
+              if (!itemsByDir["."]) itemsByDir["."] = [];
+              itemsByDir["."].push({ name: item.name, type: item.type });
+            } else {
+              // Item in subdirectory
+              const dir = parts.slice(0, -1).join("/");
+              if (!itemsByDir[dir]) itemsByDir[dir] = [];
+              itemsByDir[dir].push({
+                name: parts[parts.length - 1],
+                type: item.type,
+              });
+            }
+          });
+
+          // Display items organized by directory
+          Object.keys(itemsByDir)
+            .sort()
+            .forEach((dir) => {
+              if (dir === ".") {
+                addLog("info", "  Root:");
+                itemsByDir[dir]
+                  .sort((a, b) => {
+                    // Sort directories first, then files
+                    if (a.type !== b.type) {
+                      return a.type === "dir" ? -1 : 1;
+                    }
+                    return a.name.localeCompare(b.name);
+                  })
+                  .forEach((item) => {
+                    const icon = item.type === "dir" ? "📁" : "📄";
+                    addLog("info", `    ${icon} ${item.name}`);
+                  });
+              } else {
+                addLog("info", `  ${dir}/`);
+                itemsByDir[dir]
+                  .sort((a, b) => {
+                    // Sort directories first, then files
+                    if (a.type !== b.type) {
+                      return a.type === "dir" ? -1 : 1;
+                    }
+                    return a.name.localeCompare(b.name);
+                  })
+                  .forEach((item) => {
+                    const icon = item.type === "dir" ? "📁" : "📄";
+                    addLog("info", `    ${icon} ${item.name}`);
+                  });
+              }
+            });
         }
-        updateMessage(`Found ${availableFiles.length} files`, "info");
+        updateMessage(`Found ${repositoryItems.length} items`, "info");
         break;
 
       case "load":
         if (parts.length < 2) {
           addLog("warning", "Usage: load <filepath>");
           addLog("info", "Available files:");
-          if (availableFiles.length === 0) {
-            addLog("info", "  No files found");
+          if (repositoryItems.length === 0) {
+            addLog("info", "  No items found");
           } else {
-            availableFiles.forEach((file) => addLog("info", `  ${file}`));
+            // Group items by directory for better organization
+            const itemsByDir: {
+              [key: string]: Array<{ name: string; type: string }>;
+            } = {};
+            repositoryItems.forEach((item) => {
+              const parts = item.path.split("/");
+              if (parts.length === 1) {
+                // Root level item
+                if (!itemsByDir["."]) itemsByDir["."] = [];
+                itemsByDir["."].push({ name: item.name, type: item.type });
+              } else {
+                // Item in subdirectory
+                const dir = parts.slice(0, -1).join("/");
+                if (!itemsByDir[dir]) itemsByDir[dir] = [];
+                itemsByDir[dir].push({
+                  name: parts[parts.length - 1],
+                  type: item.type,
+                });
+              }
+            });
+
+            // Display items organized by directory
+            Object.keys(itemsByDir)
+              .sort()
+              .forEach((dir) => {
+                if (dir === ".") {
+                  addLog("info", "  Root:");
+                  itemsByDir[dir]
+                    .sort((a, b) => {
+                      // Sort directories first, then files
+                      if (a.type !== b.type) {
+                        return a.type === "dir" ? -1 : 1;
+                      }
+                      return a.name.localeCompare(b.name);
+                    })
+                    .forEach((item) => {
+                      const icon = item.type === "dir" ? "📁" : "📄";
+                      addLog("info", `    ${icon} ${item.name}`);
+                    });
+                } else {
+                  addLog("info", `  ${dir}/`);
+                  itemsByDir[dir]
+                    .sort((a, b) => {
+                      // Sort directories first, then files
+                      if (a.type !== b.type) {
+                        return a.type === "dir" ? -1 : 1;
+                      }
+                      return a.name.localeCompare(b.name);
+                    })
+                    .forEach((item) => {
+                      const icon = item.type === "dir" ? "📁" : "📄";
+                      addLog("info", `    ${icon} ${item.name}`);
+                    });
+                }
+              });
           }
           updateMessage("Usage: load <filepath>", "warning");
         } else {

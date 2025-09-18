@@ -46,14 +46,14 @@ export async function GET(request: NextRequest) {
         );
       }
     } else {
-      // Get file tree for the repository
+      // Get complete file tree for the repository
       try {
-        const files = await githubClient.getRepositoryContents(owner, repo);
+        const files = await githubClient.getRepositoryTree(owner, repo);
         return NextResponse.json({ files });
       } catch (error) {
-        console.error("Error getting repository contents:", error);
+        console.error("Error getting repository tree:", error);
         return NextResponse.json(
-          { error: "Failed to get repository contents" },
+          { error: "Failed to get repository tree" },
           { status: 500 }
         );
       }
