@@ -212,7 +212,7 @@ export default function LedgerInterface() {
     };
 
     loadRepository();
-  }, [isConnectingToRepo, addLog]);
+  }, [addLog]);
 
   // Load available files when repository is connected
   useEffect(() => {
@@ -261,7 +261,7 @@ export default function LedgerInterface() {
     };
 
     loadFiles();
-  }, [repository, isLoadingFiles, addLog]);
+  }, [repository, addLog]);
 
   // Toggle Vim mode on/off
   const toggleVimMode = () => {
