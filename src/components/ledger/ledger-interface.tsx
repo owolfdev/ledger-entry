@@ -21,10 +21,12 @@
 
 import type React from "react";
 
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import dynamic from "next/dynamic";
 import { useLayout } from "@/contexts/layout-context";
 import { useFileOperations } from "@/hooks/use-file-operations";
+import { useCommandSystem } from "@/hooks/use-command-system";
+import type { CommandContext, LogMessage } from "@/lib/commands/types";
 
 // Dynamically import Monaco Editor to avoid SSR issues
 const Editor = dynamic(() => import("@monaco-editor/react"), {
@@ -55,14 +57,6 @@ import {
   GripVertical,
   EyeOff,
 } from "lucide-react";
-
-interface LogMessage {
-  id: string;
-  type: "info" | "success" | "error" | "warning" | "loading";
-  message: string;
-  timestamp: Date;
-  isLoading?: boolean;
-}
 
 // interface LedgerEntry {
 //   date: string;
@@ -422,457 +416,92 @@ export default function LedgerInterface() {
     setMessageType(type);
   };
 
-  const executeCommand = (cmd: string) => {
-    if (!cmd.trim()) return;
+  // Create command context for the command system
+  const commandContext: CommandContext = useMemo(
+    () => ({
+      repository,
+      fileOperations: {
+        loadFile,
+        saveFile: async (content: string, message?: string) => {
+          // This would need to be implemented to actually save files
+          console.log("Save file:", content, message);
+        },
+        updateContent: setLedgerContent,
+        clearFile: () => {
+          setLedgerContent("");
+          setIsModified(false);
+        },
+        currentFile,
+        loading: false,
+        error: null,
+        isModified,
+      },
+      logger: {
+        addLog,
+        setLogs,
+        logs,
+      },
+      editor: {
+        setLedgerContent,
+        setIsModified,
+        ledgerContent,
+        isModified,
+      },
+      settings: {
+        showTerminal,
+        showEditor,
+        vimModeEnabled,
+        splitterRatio,
+      },
+      repositoryItems,
+      setCurrentFilePath,
+      updateMessage,
+    }),
+    [
+      repository,
+      loadFile,
+      currentFile,
+      isModified,
+      addLog,
+      setLogs,
+      logs,
+      setLedgerContent,
+      setIsModified,
+      ledgerContent,
+      showTerminal,
+      showEditor,
+      vimModeEnabled,
+      splitterRatio,
+      repositoryItems,
+      setCurrentFilePath,
+      updateMessage,
+    ]
+  );
 
-    // Add to history
-    setCommandHistory((prev) => [...prev, cmd]);
-    setHistoryIndex(-1);
+  // Use the new command system
+  const { executeCommand: executeCommandNew } = useCommandSystem({
+    context: commandContext,
+  });
 
-    // Parse and execute command
-    const parts = cmd.toLowerCase().trim().split(" ");
-    const mainCommand = parts[0];
+  const executeCommand = useCallback(
+    async (cmd: string) => {
+      if (!cmd.trim()) return;
 
-    addLog("info", `> ${cmd}`);
+      // Add to history
+      setCommandHistory((prev) => [...prev, cmd]);
+      setHistoryIndex(-1);
 
-    switch (mainCommand) {
-      case "balance":
-      case "bal":
-        addLog("success", "Account Balances:");
-        addLog("info", "  Assets:Checking        $1,832.83");
-        addLog("info", "  Expenses:Food:Groceries   $45.67");
-        addLog("info", "  Expenses:Food:Dining      $12.50");
-        addLog("info", "  Expenses:Housing:Rent  $1,200.00");
-        addLog("info", "  Income:Salary         $-3,000.00");
-        updateMessage(
-          "Account balances displayed. Use 'accounts' to see all account names.",
-          "success"
-        );
-        break;
+      // Execute using new command system
+      await executeCommandNew(cmd);
 
-      case "accounts":
-        addLog("success", "Available Accounts:");
-        addLog("info", "  Assets:Checking");
-        addLog("info", "  Expenses:Food:Groceries");
-        addLog("info", "  Expenses:Food:Dining");
-        addLog("info", "  Expenses:Housing:Rent");
-        addLog("info", "  Income:Salary");
-        updateMessage(
-          "All accounts listed. Use 'add transaction' to create new entries.",
-          "success"
-        );
-        break;
-
-      case "add":
-        if (parts[1] === "transaction") {
-          addLog("success", "Transaction template added to editor");
-          const template = `\n\n${
-            typeof window !== "undefined"
-              ? new Date().toISOString().split("T")[0].replace(/-/g, "/")
-              : "2024/01/18"
-          } * Description
-    Account:Name                 $0.00
-    Assets:Checking`;
-          setLedgerContent((prev) => prev + template);
-          setIsModified(true);
-          updateMessage(
-            "Transaction template added! Switch to editor to fill in details.",
-            "success"
-          );
-        } else {
-          addLog("warning", "Usage: add transaction");
-          updateMessage("Try: add transaction", "warning");
-        }
-        break;
-
-      case "save":
-        addLog("success", `File saved: ${fileName}`);
-        setIsModified(false);
-        updateMessage("File saved successfully!", "success");
-        break;
-
-      case "files":
-        addLog("info", "📁 Repository structure:");
-        if (repositoryItems.length === 0) {
-          addLog("info", "  No items found");
-        } else {
-          // Build a tree structure
-          type TreeNode = {
-            type: "dir" | "file";
-            children?: { [key: string]: TreeNode };
-          };
-
-          const tree: { [key: string]: TreeNode } = {};
-
-          // Process all items to build the tree
-          repositoryItems.forEach((item) => {
-            const parts = item.path.split("/");
-            let current = tree;
-
-            // Navigate/create the tree structure
-            for (let i = 0; i < parts.length; i++) {
-              const part = parts[i];
-              const isLast = i === parts.length - 1;
-
-              if (!current[part]) {
-                current[part] = {
-                  type: (isLast ? item.type : "dir") as "dir" | "file",
-                  children: isLast && item.type === "file" ? undefined : {},
-                };
-              }
-
-              if (!isLast && current[part].children) {
-                current = current[part].children!;
-              }
-            }
-          });
-
-          // Function to render tree recursively with better formatting
-          const renderTree = (
-            items: { [key: string]: TreeNode },
-            indent = "  ",
-            isRoot = true
-          ) => {
-            const sortedKeys = Object.keys(items).sort((a, b) => {
-              const aIsDir = items[a].type === "dir";
-              const bIsDir = items[b].type === "dir";
-              if (aIsDir !== bIsDir) {
-                return aIsDir ? -1 : 1; // Directories first
-              }
-              return a.localeCompare(b);
-            });
-
-            sortedKeys.forEach((key) => {
-              const item = items[key];
-              const icon = item.type === "dir" ? "📁" : "📄";
-              const fileType = item.type === "file" ? getFileType(key) : "";
-
-              // For files, use the clickable content pattern that matches the original format
-              if (item.type === "file") {
-                const fullPath = repositoryItems.find(
-                  (repoItem) =>
-                    repoItem.name === key && repoItem.type === "file"
-                )?.path;
-
-                if (fullPath) {
-                  // Use the original clickable pattern that renderClickableContent expects
-                  // The pattern should match: "  📄 filename.ext" (no file type suffix)
-                  addLog("info", `${indent}${icon} ${key}`);
-                } else {
-                  addLog("info", `${indent}${icon} ${key}${fileType}`);
-                }
-              } else {
-                addLog("info", `${indent}${icon} ${key}${fileType}`);
-              }
-
-              if (item.children) {
-                renderTree(item.children, `${indent}  `, false);
-              }
-            });
-          };
-
-          // Helper function to determine file type
-          const getFileType = (filename: string) => {
-            const ext = filename.split(".").pop()?.toLowerCase();
-            switch (ext) {
-              case "journal":
-                return " (ledger)";
-              case "json":
-                return " (config)";
-              case "md":
-                return " (readme)";
-              case "txt":
-                return " (text)";
-              default:
-                return "";
-            }
-          };
-
-          addLog("info", "  📂 Root:");
-          renderTree(tree);
-
-          // Add summary
-          const fileCount = repositoryItems.filter(
-            (item) => item.type === "file"
-          ).length;
-          const dirCount = repositoryItems.filter(
-            (item) => item.type === "dir"
-          ).length;
-          addLog("info", "");
-          addLog(
-            "success",
-            `📊 Summary: ${fileCount} files, ${dirCount} directories`
-          );
-        }
-        updateMessage(`Found ${repositoryItems.length} items`, "info");
-        break;
-
-      case "journals":
-        addLog("info", "📚 Journal files in /journals folder:");
-        const journalFiles = repositoryItems.filter(
-          (item) => item.path.startsWith("journals/") && item.type === "file"
-        );
-
-        if (journalFiles.length === 0) {
-          addLog("info", "  No journal files found");
-          addLog("info", "  Use 'add journal' to create a new journal file");
-        } else {
-          journalFiles
-            .sort((a, b) => a.name.localeCompare(b.name))
-            .forEach((file) => {
-              const icon = "📄";
-              // Use the format that renderClickableContent expects for clickable files
-              // Pattern must be: "  📄 filename.ext" (no file type suffix)
-              addLog("info", `  ${icon} ${file.name}`);
-            });
-          addLog("success", `📊 Found ${journalFiles.length} journal files`);
-        }
-        updateMessage(`Found ${journalFiles.length} journal files`, "info");
-        break;
-
-      case "rules":
-        addLog("info", "⚙️ Rule files in /rules folder:");
-        const ruleFiles = repositoryItems.filter(
-          (item) => item.path.startsWith("rules/") && item.type === "file"
-        );
-
-        if (ruleFiles.length === 0) {
-          addLog("info", "  No rule files found");
-          addLog("info", "  Use 'add rule' to create a new rule file");
-        } else {
-          ruleFiles
-            .sort((a, b) => a.name.localeCompare(b.name))
-            .forEach((file) => {
-              const icon = "📄";
-              // Use the format that renderClickableContent expects for clickable files
-              // Pattern must be: "  📄 filename.ext" (no file type suffix)
-              addLog("info", `  ${icon} ${file.name}`);
-            });
-          addLog("success", `📊 Found ${ruleFiles.length} rule files`);
-        }
-        updateMessage(`Found ${ruleFiles.length} rule files`, "info");
-        break;
-
-      case "accounts":
-        addLog("info", "📋 Account files:");
-        const accountFiles = repositoryItems.filter(
-          (item) =>
-            item.type === "file" &&
-            (item.name === "accounts.journal" ||
-              item.path.startsWith("accounts/") ||
-              item.name.includes("account"))
-        );
-
-        if (accountFiles.length === 0) {
-          addLog("info", "  No account files found");
-          addLog("info", "  Use 'add account' to create account definitions");
-        } else {
-          accountFiles
-            .sort((a, b) => a.name.localeCompare(b.name))
-            .forEach((file) => {
-              const icon = "📄";
-              // Use the format that renderClickableContent expects for clickable files
-              // Pattern must be: "  📄 filename.ext" (no file type suffix)
-              addLog("info", `  ${icon} ${file.name}`);
-            });
-          addLog("success", `📊 Found ${accountFiles.length} account files`);
-        }
-        updateMessage(`Found ${accountFiles.length} account files`, "info");
-        break;
-
-      case "load":
-        if (parts.length < 2) {
-          addLog("warning", "Usage: load <filepath>");
-          addLog("info", "Available files:");
-          if (repositoryItems.length === 0) {
-            addLog("info", "  No items found");
-          } else {
-            // Build a tree structure (reuse the same logic as files command)
-            type TreeNode = {
-              type: "dir" | "file";
-              children?: { [key: string]: TreeNode };
-            };
-
-            const tree: { [key: string]: TreeNode } = {};
-
-            // Process all items to build the tree
-            repositoryItems.forEach((item) => {
-              const parts = item.path.split("/");
-              let current = tree;
-
-              // Navigate/create the tree structure
-              for (let i = 0; i < parts.length; i++) {
-                const part = parts[i];
-                const isLast = i === parts.length - 1;
-
-                if (!current[part]) {
-                  current[part] = {
-                    type: (isLast ? item.type : "dir") as "dir" | "file",
-                    children: isLast && item.type === "file" ? undefined : {},
-                  };
-                }
-
-                if (!isLast && current[part].children) {
-                  current = current[part].children!;
-                }
-              }
-            });
-
-            // Function to render tree recursively
-            const renderTree = (
-              items: { [key: string]: TreeNode },
-              indent = "  ",
-              isRoot = true
-            ) => {
-              const sortedKeys = Object.keys(items).sort((a, b) => {
-                const aIsDir = items[a].type === "dir";
-                const bIsDir = items[b].type === "dir";
-                if (aIsDir !== bIsDir) {
-                  return aIsDir ? -1 : 1; // Directories first
-                }
-                return a.localeCompare(b);
-              });
-
-              sortedKeys.forEach((key) => {
-                const item = items[key];
-                const icon = item.type === "dir" ? "📁" : "📄";
-
-                if (isRoot) {
-                  addLog("info", `${indent}${icon} ${key}`);
-                } else {
-                  addLog("info", `${indent}${icon} ${key}`);
-                }
-
-                if (item.children) {
-                  renderTree(item.children, `${indent}  `, false);
-                }
-              });
-            };
-
-            addLog("info", "  Root:");
-            renderTree(tree);
-          }
-          updateMessage("Usage: load <filepath>", "warning");
-        } else {
-          const filePath = parts.slice(1).join(" ");
-
-          // Add loading message
-          const loadingLogId = Date.now().toString();
-          addLog("loading", `📄 Loading file from repository: ${filePath}`);
-
-          // Add intermediate progress message
-          setTimeout(() => {
-            addLog("info", `   → Fetching file content from GitHub API...`);
-          }, 200);
-
-          loadFile(filePath)
-            .then(() => {
-              // Remove loading message and add success
-              setLogs((prev) => prev.filter((log) => log.id !== loadingLogId));
-              setCurrentFilePath(filePath);
-              addLog("success", `Loaded file: ${filePath}`);
-              updateMessage(`Loaded file: ${filePath}`, "success");
-            })
-            .catch((error) => {
-              // Remove loading message and add error
-              setLogs((prev) => prev.filter((log) => log.id !== loadingLogId));
-              addLog("error", `Failed to load file: ${error.message}`);
-              updateMessage("Failed to load file", "error");
-            });
-        }
-        break;
-
-      case "validate":
-        // Add loading message
-        const validateLoadingLogId = Date.now().toString();
-        addLog(
-          "loading",
-          "🔍 Validating ledger entries and checking balance..."
-        );
-        updateMessage("Validating entries...", "info");
-
-        // Add intermediate progress message
-        setTimeout(() => {
-          addLog(
-            "info",
-            "   → Parsing ledger entries and calculating balances..."
-          );
-        }, 100);
-
-        setTimeout(() => {
-          // Remove loading message and add success
-          setLogs((prev) =>
-            prev.filter((log) => log.id !== validateLoadingLogId)
-          );
-          addLog("success", "All entries are valid");
-          updateMessage(
-            "All entries are valid! Your ledger is balanced.",
-            "success"
-          );
-        }, 500);
-        break;
-
-      case "clear":
-        setLogs([]);
-        updateMessage(
-          "Terminal cleared. Type 'help' for available commands.",
-          "info"
-        );
-        break;
-
-      case "help":
-        addLog("info", "📖 Available commands:");
-        addLog("info", "");
-        addLog("info", "📊 Account & Balance Commands:");
-        addLog("info", "  balance, bal     - Show account balances");
-        addLog("info", "  accounts         - List all accounts");
-        addLog("info", "");
-        addLog("info", "📁 File Management Commands:");
-        addLog("info", "  files            - List all files in repository");
-        addLog(
-          "info",
-          "  journals         - List journal files in /journals folder"
-        );
-        addLog("info", "  rules            - List rule files in /rules folder");
-        addLog("info", "  accounts         - List account files");
-        addLog("info", "  load <filepath>  - Load a file from repository");
-        addLog("info", "  save             - Save current file");
-        addLog("info", "");
-        addLog("info", "✏️ Transaction Commands:");
-        addLog("info", "  add transaction  - Add transaction template");
-        addLog("info", "");
-        addLog("info", "🔧 Utility Commands:");
-        addLog("info", "  validate         - Validate ledger entries");
-        addLog("info", "  clear            - Clear terminal output");
-        addLog("info", "  help             - Show this help message");
-        addLog("info", "");
-        addLog(
-          "success",
-          "💡 Try 'files' to see repository structure or 'journals' for journal files"
-        );
-        updateMessage(
-          "Help displayed! Try 'files' to see available files.",
-          "info"
-        );
-        break;
-
-      default:
-        addLog(
-          "error",
-          `Unknown command: ${mainCommand}. Type 'help' for available commands.`
-        );
-        updateMessage(
-          `Unknown command: ${mainCommand}. Type 'help' for available commands.`,
-          "error"
-        );
-    }
-
-    setCommand("");
-    if (commandInputRef.current) {
-      commandInputRef.current.style.height = "auto";
-      commandInputRef.current.focus();
-    }
-  };
+      setCommand("");
+      if (commandInputRef.current) {
+        commandInputRef.current.style.height = "auto";
+        commandInputRef.current.focus();
+      }
+    },
+    [executeCommandNew]
+  );
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
