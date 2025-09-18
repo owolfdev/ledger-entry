@@ -43,6 +43,7 @@ const Editor = dynamic(() => import("@monaco-editor/react"), {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ledger/ui/scroll-area";
+import { AnimatedLoadingMessage } from "@/components/ui/loading-dots";
 import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
 import {
   Save,
@@ -57,9 +58,10 @@ import {
 
 interface LogMessage {
   id: string;
-  type: "info" | "success" | "error" | "warning";
+  type: "info" | "success" | "error" | "warning" | "loading";
   message: string;
   timestamp: Date;
+  isLoading?: boolean;
 }
 
 // interface LedgerEntry {
@@ -109,6 +111,10 @@ export default function LedgerInterface() {
     Array<{ name: string; path: string; type: string }>
   >([]);
   const [currentFilePath, setCurrentFilePath] = useState<string | null>(null);
+
+  // Loading states
+  const [isConnectingToRepo, setIsConnectingToRepo] = useState(false);
+  const [isLoadingFiles, setIsLoadingFiles] = useState(false);
 
   // File operations hook
   const { currentFile, loadFile } = useFileOperations({
@@ -161,7 +167,23 @@ export default function LedgerInterface() {
   // Load connected repository
   useEffect(() => {
     const loadRepository = async () => {
+      setIsConnectingToRepo(true);
+
+      // Add loading message
+      const loadingLogId = Date.now().toString();
+      addLog("loading", "🔗 Connecting to GitHub repository...");
+
       try {
+        // Add intermediate progress message
+        setTimeout(() => {
+          if (isConnectingToRepo) {
+            addLog(
+              "info",
+              "   → Fetching repository information from database..."
+            );
+          }
+        }, 500);
+
         const response = await fetch("/api/ledger/repos");
         if (response.ok) {
           const data = await response.json();
@@ -170,11 +192,16 @@ export default function LedgerInterface() {
               owner: data.connectedRepo.repo_owner,
               repo: data.connectedRepo.repo_name,
             });
+
+            // Remove loading message and add success
+            setLogs((prev) => prev.filter((log) => log.id !== loadingLogId));
             addLog(
               "success",
               `Connected to repository: ${data.connectedRepo.repo_full_name}`
             );
           } else {
+            // Remove loading message and add warning
+            setLogs((prev) => prev.filter((log) => log.id !== loadingLogId));
             addLog(
               "warning",
               "No repository connected. Use 'files' to see available files."
@@ -182,7 +209,11 @@ export default function LedgerInterface() {
           }
         }
       } catch {
+        // Remove loading message and add error
+        setLogs((prev) => prev.filter((log) => log.id !== loadingLogId));
         addLog("error", "Failed to load repository information");
+      } finally {
+        setIsConnectingToRepo(false);
       }
     };
 
@@ -194,7 +225,23 @@ export default function LedgerInterface() {
     const loadFiles = async () => {
       if (!repository) return;
 
+      setIsLoadingFiles(true);
+
+      // Add loading message
+      const loadingLogId = Date.now().toString();
+      addLog(
+        "loading",
+        "📁 Scanning repository structure and loading files..."
+      );
+
       try {
+        // Add intermediate progress message
+        setTimeout(() => {
+          if (isLoadingFiles) {
+            addLog("info", "   → Querying GitHub API for file tree...");
+          }
+        }, 300);
+
         const response = await fetch(
           `/api/github/files?owner=${repository.owner}&repo=${repository.repo}`
         );
@@ -205,10 +252,17 @@ export default function LedgerInterface() {
           const fileCount = items.filter(
             (item: { type: string }) => item.type === "file"
           ).length;
+
+          // Remove loading message and add success
+          setLogs((prev) => prev.filter((log) => log.id !== loadingLogId));
           addLog("info", `Found ${fileCount} files in repository`);
         }
       } catch {
+        // Remove loading message and add error
+        setLogs((prev) => prev.filter((log) => log.id !== loadingLogId));
         addLog("error", "Failed to load repository files");
+      } finally {
+        setIsLoadingFiles(false);
       }
     };
 
@@ -438,7 +492,7 @@ export default function LedgerInterface() {
         break;
 
       case "files":
-        addLog("info", "Repository structure:");
+        addLog("info", "📁 Repository structure:");
         if (repositoryItems.length === 0) {
           addLog("info", "  No items found");
         } else {
@@ -473,7 +527,7 @@ export default function LedgerInterface() {
             }
           });
 
-          // Function to render tree recursively
+          // Function to render tree recursively with better formatting
           const renderTree = (
             items: { [key: string]: TreeNode },
             indent = "  ",
@@ -491,11 +545,24 @@ export default function LedgerInterface() {
             sortedKeys.forEach((key) => {
               const item = items[key];
               const icon = item.type === "dir" ? "📁" : "📄";
+              const fileType = item.type === "file" ? getFileType(key) : "";
 
-              if (isRoot) {
-                addLog("info", `${indent}${icon} ${key}`);
+              // For files, use the clickable content pattern that matches the original format
+              if (item.type === "file") {
+                const fullPath = repositoryItems.find(
+                  (repoItem) =>
+                    repoItem.name === key && repoItem.type === "file"
+                )?.path;
+
+                if (fullPath) {
+                  // Use the original clickable pattern that renderClickableContent expects
+                  // The pattern should match: "  📄 filename.ext" (no file type suffix)
+                  addLog("info", `${indent}${icon} ${key}`);
+                } else {
+                  addLog("info", `${indent}${icon} ${key}${fileType}`);
+                }
               } else {
-                addLog("info", `${indent}${icon} ${key}`);
+                addLog("info", `${indent}${icon} ${key}${fileType}`);
               }
 
               if (item.children) {
@@ -504,10 +571,113 @@ export default function LedgerInterface() {
             });
           };
 
-          addLog("info", "  Root:");
+          // Helper function to determine file type
+          const getFileType = (filename: string) => {
+            const ext = filename.split(".").pop()?.toLowerCase();
+            switch (ext) {
+              case "journal":
+                return " (ledger)";
+              case "json":
+                return " (config)";
+              case "md":
+                return " (readme)";
+              case "txt":
+                return " (text)";
+              default:
+                return "";
+            }
+          };
+
+          addLog("info", "  📂 Root:");
           renderTree(tree);
+
+          // Add summary
+          const fileCount = repositoryItems.filter(
+            (item) => item.type === "file"
+          ).length;
+          const dirCount = repositoryItems.filter(
+            (item) => item.type === "dir"
+          ).length;
+          addLog("info", "");
+          addLog(
+            "success",
+            `📊 Summary: ${fileCount} files, ${dirCount} directories`
+          );
         }
         updateMessage(`Found ${repositoryItems.length} items`, "info");
+        break;
+
+      case "journals":
+        addLog("info", "📚 Journal files in /journals folder:");
+        const journalFiles = repositoryItems.filter(
+          (item) => item.path.startsWith("journals/") && item.type === "file"
+        );
+
+        if (journalFiles.length === 0) {
+          addLog("info", "  No journal files found");
+          addLog("info", "  Use 'add journal' to create a new journal file");
+        } else {
+          journalFiles
+            .sort((a, b) => a.name.localeCompare(b.name))
+            .forEach((file) => {
+              const icon = "📄";
+              // Use the format that renderClickableContent expects for clickable files
+              // Pattern must be: "  📄 filename.ext" (no file type suffix)
+              addLog("info", `  ${icon} ${file.name}`);
+            });
+          addLog("success", `📊 Found ${journalFiles.length} journal files`);
+        }
+        updateMessage(`Found ${journalFiles.length} journal files`, "info");
+        break;
+
+      case "rules":
+        addLog("info", "⚙️ Rule files in /rules folder:");
+        const ruleFiles = repositoryItems.filter(
+          (item) => item.path.startsWith("rules/") && item.type === "file"
+        );
+
+        if (ruleFiles.length === 0) {
+          addLog("info", "  No rule files found");
+          addLog("info", "  Use 'add rule' to create a new rule file");
+        } else {
+          ruleFiles
+            .sort((a, b) => a.name.localeCompare(b.name))
+            .forEach((file) => {
+              const icon = "📄";
+              // Use the format that renderClickableContent expects for clickable files
+              // Pattern must be: "  📄 filename.ext" (no file type suffix)
+              addLog("info", `  ${icon} ${file.name}`);
+            });
+          addLog("success", `📊 Found ${ruleFiles.length} rule files`);
+        }
+        updateMessage(`Found ${ruleFiles.length} rule files`, "info");
+        break;
+
+      case "accounts":
+        addLog("info", "📋 Account files:");
+        const accountFiles = repositoryItems.filter(
+          (item) =>
+            item.type === "file" &&
+            (item.name === "accounts.journal" ||
+              item.path.startsWith("accounts/") ||
+              item.name.includes("account"))
+        );
+
+        if (accountFiles.length === 0) {
+          addLog("info", "  No account files found");
+          addLog("info", "  Use 'add account' to create account definitions");
+        } else {
+          accountFiles
+            .sort((a, b) => a.name.localeCompare(b.name))
+            .forEach((file) => {
+              const icon = "📄";
+              // Use the format that renderClickableContent expects for clickable files
+              // Pattern must be: "  📄 filename.ext" (no file type suffix)
+              addLog("info", `  ${icon} ${file.name}`);
+            });
+          addLog("success", `📊 Found ${accountFiles.length} account files`);
+        }
+        updateMessage(`Found ${accountFiles.length} account files`, "info");
         break;
 
       case "load":
@@ -585,13 +755,27 @@ export default function LedgerInterface() {
           updateMessage("Usage: load <filepath>", "warning");
         } else {
           const filePath = parts.slice(1).join(" ");
+
+          // Add loading message
+          const loadingLogId = Date.now().toString();
+          addLog("loading", `📄 Loading file from repository: ${filePath}`);
+
+          // Add intermediate progress message
+          setTimeout(() => {
+            addLog("info", `   → Fetching file content from GitHub API...`);
+          }, 200);
+
           loadFile(filePath)
             .then(() => {
+              // Remove loading message and add success
+              setLogs((prev) => prev.filter((log) => log.id !== loadingLogId));
               setCurrentFilePath(filePath);
               addLog("success", `Loaded file: ${filePath}`);
               updateMessage(`Loaded file: ${filePath}`, "success");
             })
             .catch((error) => {
+              // Remove loading message and add error
+              setLogs((prev) => prev.filter((log) => log.id !== loadingLogId));
               addLog("error", `Failed to load file: ${error.message}`);
               updateMessage("Failed to load file", "error");
             });
@@ -599,9 +783,27 @@ export default function LedgerInterface() {
         break;
 
       case "validate":
-        addLog("info", "Validating ledger entries...");
+        // Add loading message
+        const validateLoadingLogId = Date.now().toString();
+        addLog(
+          "loading",
+          "🔍 Validating ledger entries and checking balance..."
+        );
         updateMessage("Validating entries...", "info");
+
+        // Add intermediate progress message
         setTimeout(() => {
+          addLog(
+            "info",
+            "   → Parsing ledger entries and calculating balances..."
+          );
+        }, 100);
+
+        setTimeout(() => {
+          // Remove loading message and add success
+          setLogs((prev) =>
+            prev.filter((log) => log.id !== validateLoadingLogId)
+          );
           addLog("success", "All entries are valid");
           updateMessage(
             "All entries are valid! Your ledger is balanced.",
@@ -619,16 +821,35 @@ export default function LedgerInterface() {
         break;
 
       case "help":
-        addLog("info", "Available commands:");
-        addLog("info", "  balance, bal - Show account balances");
-        addLog("info", "  accounts - List all accounts");
-        addLog("info", "  add transaction - Add transaction template");
-        addLog("info", "  files - List available files in repository");
-        addLog("info", "  load <filepath> - Load a file from repository");
-        addLog("info", "  save - Save current file");
-        addLog("info", "  validate - Validate ledger entries");
-        addLog("info", "  clear - Clear terminal output");
-        addLog("info", "  help - Show this help message");
+        addLog("info", "📖 Available commands:");
+        addLog("info", "");
+        addLog("info", "📊 Account & Balance Commands:");
+        addLog("info", "  balance, bal     - Show account balances");
+        addLog("info", "  accounts         - List all accounts");
+        addLog("info", "");
+        addLog("info", "📁 File Management Commands:");
+        addLog("info", "  files            - List all files in repository");
+        addLog(
+          "info",
+          "  journals         - List journal files in /journals folder"
+        );
+        addLog("info", "  rules            - List rule files in /rules folder");
+        addLog("info", "  accounts         - List account files");
+        addLog("info", "  load <filepath>  - Load a file from repository");
+        addLog("info", "  save             - Save current file");
+        addLog("info", "");
+        addLog("info", "✏️ Transaction Commands:");
+        addLog("info", "  add transaction  - Add transaction template");
+        addLog("info", "");
+        addLog("info", "🔧 Utility Commands:");
+        addLog("info", "  validate         - Validate ledger entries");
+        addLog("info", "  clear            - Clear terminal output");
+        addLog("info", "  help             - Show this help message");
+        addLog("info", "");
+        addLog(
+          "success",
+          "💡 Try 'files' to see repository structure or 'journals' for journal files"
+        );
         updateMessage(
           "Help displayed! Try 'files' to see available files.",
           "info"
@@ -698,7 +919,22 @@ export default function LedgerInterface() {
       success: "text-green-400",
       error: "text-red-400",
       warning: "text-yellow-400",
+      loading: "text-muted-foreground",
     };
+
+    // For loading messages, render with animated dots
+    if (log.type === "loading") {
+      return (
+        <div key={log.id} className="text-sm font-mono whitespace-pre">
+          <AnimatedLoadingMessage
+            message={log.message}
+            className="text-sm font-mono"
+            dotColor="muted"
+            dotSize="sm"
+          />
+        </div>
+      );
+    }
 
     // Function to render clickable file paths
     const renderClickableContent = (message: string) => {
