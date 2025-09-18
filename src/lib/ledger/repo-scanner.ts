@@ -3,7 +3,7 @@ import { GitHubClient } from "../github/client";
 export interface LedgerRepoStructure {
   hasMainJournal: boolean;
   hasAccountsJournal: boolean;
-  hasEntriesFolder: boolean;
+  hasJournalsFolder: boolean;
   hasRulesFolder: boolean;
   isCompatible: boolean;
   missingFiles: string[];
@@ -51,13 +51,13 @@ export async function scanLedgerStructure(
     );
     const hasAccountsJournal = !!accountsJournal;
 
-    // Check for entries/ folder (look for any file in entries/)
-    const entriesFiles = await githubClient.getDirectoryContents(
+    // Check for journals/ folder (look for any file in journals/)
+    const journalsFiles = await githubClient.getDirectoryContents(
       owner,
       repo,
-      "entries"
+      "journals"
     );
-    const hasEntriesFolder = entriesFiles.length > 0;
+    const hasJournalsFolder = journalsFiles.length > 0;
 
     // Check for rules/ folder (look for any file in rules/)
     const rulesFiles = await githubClient.getDirectoryContents(
@@ -70,19 +70,19 @@ export async function scanLedgerStructure(
     // Track missing items
     if (!hasMainJournal) missingFiles.push("main.journal");
     if (!hasAccountsJournal) missingFiles.push("accounts.journal");
-    if (!hasEntriesFolder) missingFolders.push("entries/");
+    if (!hasJournalsFolder) missingFolders.push("journals/");
     if (!hasRulesFolder) missingFolders.push("rules/");
 
     const isCompatible =
       hasMainJournal &&
       hasAccountsJournal &&
-      hasEntriesFolder &&
+      hasJournalsFolder &&
       hasRulesFolder;
 
     return {
       hasMainJournal,
       hasAccountsJournal,
-      hasEntriesFolder,
+      hasJournalsFolder,
       hasRulesFolder,
       isCompatible,
       missingFiles,
@@ -93,11 +93,11 @@ export async function scanLedgerStructure(
     return {
       hasMainJournal: false,
       hasAccountsJournal: false,
-      hasEntriesFolder: false,
+      hasJournalsFolder: false,
       hasRulesFolder: false,
       isCompatible: false,
       missingFiles: ["main.journal", "accounts.journal"],
-      missingFolders: ["entries/", "rules/"],
+      missingFolders: ["journals/", "rules/"],
     };
   }
 }
@@ -145,11 +145,11 @@ export async function scanUserRepositories(
       ledgerStructure: {
         hasMainJournal: false,
         hasAccountsJournal: false,
-        hasEntriesFolder: false,
+        hasJournalsFolder: false,
         hasRulesFolder: false,
         isCompatible: false,
         missingFiles: ["main.journal", "accounts.journal"],
-        missingFolders: ["entries/", "rules/"],
+        missingFolders: ["journals/", "rules/"],
       },
     }));
 

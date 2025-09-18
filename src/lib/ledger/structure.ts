@@ -32,7 +32,7 @@ export function generateLedgerStructure(
 
   const mainJournalIncludes = [
     "accounts.journal",
-    `entries/${currentMonth}.journal`,
+    `journals/${currentMonth}.journal`,
   ];
 
   return {
@@ -52,7 +52,7 @@ function generateMainJournal(): LedgerFile {
 ; Generated on ${currentDate.toISOString().split("T")[0]}
 
 !include accounts.journal
-!include entries/${currentMonth}.journal
+!include journals/${currentMonth}.journal
 `,
   };
 }
@@ -88,7 +88,7 @@ ${aliasLines}
 
 function generateMonthlyJournal(month: string): LedgerFile {
   return {
-    path: `entries/${month}.journal`,
+    path: `journals/${month}.journal`,
     content: `; Monthly transaction entries for ${month}
 ; Add your transactions here
 

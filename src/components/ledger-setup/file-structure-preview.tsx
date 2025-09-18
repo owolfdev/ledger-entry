@@ -145,7 +145,7 @@ export function FileStructurePreview({
                   {template.accounts.length} accounts)
                 </li>
                 <li>
-                  • <code>entries/YYYY-MM.journal</code> - Monthly transaction
+                  • <code>journals/YYYY-MM.journal</code> - Monthly transaction
                   files
                 </li>
               </ul>

@@ -165,7 +165,7 @@ src/components/
 
 - Ledger file structure initialization in user's GitHub repo
 - Repository creation/connection workflow
-- Starter file templates (main.journal, accounts.journal, entries/, rules/)
+- Starter file templates (main.journal, accounts.journal, journals/, rules/)
 - Git commit workflow with proper commit messages
 
 **Implemented files:**

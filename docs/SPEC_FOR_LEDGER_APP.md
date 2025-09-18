@@ -55,7 +55,7 @@ User → Web App → Backend → GitHub (fetch files) → Ledger Runner (compute
 4. **Create or Connect Repo**:
 
    - App creates `ledger-entry` repo or lets user pick an existing repo.
-   - Push starter files (`main.journal`, `accounts.journal`, `entries/YYYY-MM.journal`, `rules` folder).
+   - Push starter files (`main.journal`, `accounts.journal`, `journals/YYYY-MM.journal`, `rules` folder).
 
 5. **User Lands in App**:
 
@@ -69,7 +69,7 @@ User → Web App → Backend → GitHub (fetch files) → Ledger Runner (compute
 my-ledger/
 ├─ main.journal
 ├─ accounts.journal
-├─ entries/
+├─ journals/
 │  ├─ 2025-09.journal
 │  ├─ 2025-10.journal
 │  └─ ...
@@ -84,11 +84,11 @@ my-ledger/
 
   ```
   !include accounts.journal
-  !include entries/2025-09.journal
+  !include journals/2025-09.journal
   ```
 
 - **accounts.journal** — declares accounts and aliases.
-- **entries/YYYY-MM.journal** — transaction files per month.
+- **journals/YYYY-MM.journal** — transaction files per month.
 - **rules/** — JSON rules (precedence 30>20>10>00).
 
 ---
@@ -110,7 +110,7 @@ alias kbank  = Personal:Assets:Bank:KBank:Checking
 
 ### 5.2 Transactions
 
-In `entries/YYYY-MM.journal`:
+In `journals/YYYY-MM.journal`:
 
 ```
 2025/09/15 Starbucks
@@ -242,7 +242,7 @@ User can edit before saving.
 POST /ledger/run
 {
   "files": [
-    {"path":"entries/2025-09.journal","contentBase64":"..."},
+    {"path":"journals/2025-09.journal","contentBase64":"..."},
     {"path":"accounts.journal","contentBase64":"..."}
   ],
   "main": "main.journal",
@@ -338,7 +338,7 @@ POST /ledger/run
 **Phase-0 (MVP)**
 
 - GitHub OAuth + PAT vaulting.
-- Repo bootstrap (main/accounts/entries/rules).
+- Repo bootstrap (main/accounts/journals/rules).
 - NL interpreter + textarea editing + Save.
 - Ledger runner microservice.
 - Rules page basic editor.
@@ -373,7 +373,7 @@ POST /ledger/run
 ```
 ; Ledger Entry — main
 !include accounts.journal
-!include entries/2025-09.journal
+!include journals/2025-09.journal
 ```
 
 **accounts.journal**
@@ -435,7 +435,7 @@ Ledger Entry is a GitHub-backed, plain-text, multi-lingual, multi-currency ledge
 my-ledger/             ← user’s GitHub repo
 ├─ main.journal        ← root file with !include lines
 ├─ accounts.journal    ← chart of accounts + aliases
-├─ entries/            ← one file per month of transactions
+├─ journals/            ← one file per month of transactions
 │  ├─ 2025-09.journal
 │  ├─ 2025-10.journal
 │  └─ ...
@@ -455,13 +455,13 @@ my-ledger/             ← user’s GitHub repo
 
   ```
   !include accounts.journal
-  !include entries/2025-09.journal
+  !include journals/2025-09.journal
   ```
 
 - **`accounts.journal`**
   Predefines accounts and aliases; also optional Ledger rules.
 
-- **`entries/YYYY-MM.journal`**
+- **`journals/YYYY-MM.journal`**
   App appends each new entry here (one per month or year).
   On save, app fetches the file via GitHub API, appends text, and commits with a clear commit message.
 

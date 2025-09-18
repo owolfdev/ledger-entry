@@ -108,12 +108,12 @@ export function RepoStatusCard({
                 <span className="text-foreground">accounts.journal</span>
               </div>
               <div className="flex items-center gap-2">
-                {structure.hasEntriesFolder ? (
+                {structure.hasJournalsFolder ? (
                   <CheckCircle className="h-4 w-4 text-green-500 dark:text-green-400" />
                 ) : (
                   <XCircle className="h-4 w-4 text-red-500 dark:text-red-400" />
                 )}
-                <span className="text-foreground">entries/ folder</span>
+                <span className="text-foreground">journals/ folder</span>
               </div>
               <div className="flex items-center gap-2">
                 {structure.hasRulesFolder ? (

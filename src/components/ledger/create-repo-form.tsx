@@ -187,7 +187,7 @@ export function CreateRepoForm({
             <li>• A new GitHub repository with your chosen name</li>
             <li>• main.journal - Main ledger file with includes</li>
             <li>• accounts.journal - Chart of accounts</li>
-            <li>• entries/ folder - Monthly transaction files</li>
+            <li>• journals/ folder - Monthly transaction files</li>
             <li>• rules/ folder - JSON rules for automation</li>
             <li>• Repository will be automatically connected</li>
           </ul>

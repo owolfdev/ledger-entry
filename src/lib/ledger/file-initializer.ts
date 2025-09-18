@@ -26,7 +26,7 @@ export async function initializeLedgerStructure(
     // Create blank main.journal
     const mainJournalContent = `; Ledger Entry — main journal file
 !include accounts.journal
-!include entries/2025-01.journal
+!include journals/2025-01.journal
 `;
 
     await githubClient.createFile(
@@ -56,7 +56,7 @@ export async function initializeLedgerStructure(
     );
     result.createdFiles.push("accounts.journal");
 
-    // Create entries folder and first month file
+    // Create journals folder and first month file
     const currentMonth = new Date().toISOString().slice(0, 7); // YYYY-MM format
     const entriesContent = `; Ledger Entry — transactions for ${currentMonth}
 ; Add your transactions here
@@ -69,11 +69,11 @@ export async function initializeLedgerStructure(
     await githubClient.createFile(
       owner,
       repo,
-      `entries/${currentMonth}.journal`,
+      `journals/${currentMonth}.journal`,
       entriesContent,
       "Initialize ledger structure: add entries folder and first month file"
     );
-    result.createdFiles.push(`entries/${currentMonth}.journal`);
+    result.createdFiles.push(`journals/${currentMonth}.journal`);
 
     // Create rules folder and base files
     const baseRulesContent = `{
@@ -132,7 +132,7 @@ export async function initializeLedgerStructure(
     );
     result.createdFiles.push("rules/30-learned.json");
 
-    result.createdFolders.push("entries/", "rules/");
+    result.createdFolders.push("journals/", "rules/");
   } catch (error) {
     console.error("Error initializing ledger structure:", error);
     result.success = false;
@@ -166,7 +166,7 @@ export async function addMissingFiles(
     if (missingFiles.includes("main.journal")) {
       const mainJournalContent = `; Ledger Entry — main journal file
 !include accounts.journal
-!include entries/2025-01.journal
+!include journals/2025-01.journal
 `;
 
       await githubClient.createFile(
@@ -195,8 +195,8 @@ export async function addMissingFiles(
       result.createdFiles.push("accounts.journal");
     }
 
-    // Add missing entries folder and first month file
-    if (missingFolders.includes("entries/")) {
+    // Add missing journals folder and first month file
+    if (missingFolders.includes("journals/")) {
       const currentMonth = new Date().toISOString().slice(0, 7);
       const entriesContent = `; Ledger Entry — transactions for ${currentMonth}
 ; Add your transactions here
@@ -205,12 +205,12 @@ export async function addMissingFiles(
       await githubClient.createFile(
         owner,
         repo,
-        `entries/${currentMonth}.journal`,
+        `journals/${currentMonth}.journal`,
         entriesContent,
         "Add missing entries folder and first month file"
       );
-      result.createdFiles.push(`entries/${currentMonth}.journal`);
-      result.createdFolders.push("entries/");
+      result.createdFiles.push(`journals/${currentMonth}.journal`);
+      result.createdFolders.push("journals/");
     }
 
     // Add missing rules folder and files

@@ -126,7 +126,7 @@ export function RepoSelection({ onRepoConnected }: RepoSelectionProps) {
       ledgerStructure: {
         hasMainJournal: true,
         hasAccountsJournal: true,
-        hasEntriesFolder: true,
+        hasJournalsFolder: true,
         hasRulesFolder: true,
         isCompatible: true,
         missingFiles: [],
