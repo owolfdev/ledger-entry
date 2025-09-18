@@ -442,61 +442,70 @@ export default function LedgerInterface() {
         if (repositoryItems.length === 0) {
           addLog("info", "  No items found");
         } else {
-          // Group items by directory for better organization
-          const itemsByDir: {
-            [key: string]: Array<{ name: string; type: string }>;
-          } = {};
+          // Build a tree structure
+          type TreeNode = {
+            type: "dir" | "file";
+            children?: { [key: string]: TreeNode };
+          };
+
+          const tree: { [key: string]: TreeNode } = {};
+
+          // Process all items to build the tree
           repositoryItems.forEach((item) => {
             const parts = item.path.split("/");
-            if (parts.length === 1) {
-              // Root level item
-              if (!itemsByDir["."]) itemsByDir["."] = [];
-              itemsByDir["."].push({ name: item.name, type: item.type });
-            } else {
-              // Item in subdirectory
-              const dir = parts.slice(0, -1).join("/");
-              if (!itemsByDir[dir]) itemsByDir[dir] = [];
-              itemsByDir[dir].push({
-                name: parts[parts.length - 1],
-                type: item.type,
-              });
+            let current = tree;
+
+            // Navigate/create the tree structure
+            for (let i = 0; i < parts.length; i++) {
+              const part = parts[i];
+              const isLast = i === parts.length - 1;
+
+              if (!current[part]) {
+                current[part] = {
+                  type: (isLast ? item.type : "dir") as "dir" | "file",
+                  children: isLast && item.type === "file" ? undefined : {},
+                };
+              }
+
+              if (!isLast && current[part].children) {
+                current = current[part].children!;
+              }
             }
           });
 
-          // Display items organized by directory
-          Object.keys(itemsByDir)
-            .sort()
-            .forEach((dir) => {
-              if (dir === ".") {
-                addLog("info", "  Root:");
-                itemsByDir[dir]
-                  .sort((a, b) => {
-                    // Sort directories first, then files
-                    if (a.type !== b.type) {
-                      return a.type === "dir" ? -1 : 1;
-                    }
-                    return a.name.localeCompare(b.name);
-                  })
-                  .forEach((item) => {
-                    const icon = item.type === "dir" ? "📁" : "📄";
-                    addLog("info", `    ${icon} ${item.name}`);
-                  });
+          // Function to render tree recursively
+          const renderTree = (
+            items: { [key: string]: TreeNode },
+            indent = "  ",
+            isRoot = true
+          ) => {
+            const sortedKeys = Object.keys(items).sort((a, b) => {
+              const aIsDir = items[a].type === "dir";
+              const bIsDir = items[b].type === "dir";
+              if (aIsDir !== bIsDir) {
+                return aIsDir ? -1 : 1; // Directories first
+              }
+              return a.localeCompare(b);
+            });
+
+            sortedKeys.forEach((key) => {
+              const item = items[key];
+              const icon = item.type === "dir" ? "📁" : "📄";
+
+              if (isRoot) {
+                addLog("info", `${indent}${icon} ${key}`);
               } else {
-                addLog("info", `  ${dir}/`);
-                itemsByDir[dir]
-                  .sort((a, b) => {
-                    // Sort directories first, then files
-                    if (a.type !== b.type) {
-                      return a.type === "dir" ? -1 : 1;
-                    }
-                    return a.name.localeCompare(b.name);
-                  })
-                  .forEach((item) => {
-                    const icon = item.type === "dir" ? "📁" : "📄";
-                    addLog("info", `    ${icon} ${item.name}`);
-                  });
+                addLog("info", `${indent}${icon} ${key}`);
+              }
+
+              if (item.children) {
+                renderTree(item.children, `${indent}  `, false);
               }
             });
+          };
+
+          addLog("info", "  Root:");
+          renderTree(tree);
         }
         updateMessage(`Found ${repositoryItems.length} items`, "info");
         break;
@@ -508,61 +517,70 @@ export default function LedgerInterface() {
           if (repositoryItems.length === 0) {
             addLog("info", "  No items found");
           } else {
-            // Group items by directory for better organization
-            const itemsByDir: {
-              [key: string]: Array<{ name: string; type: string }>;
-            } = {};
+            // Build a tree structure (reuse the same logic as files command)
+            type TreeNode = {
+              type: "dir" | "file";
+              children?: { [key: string]: TreeNode };
+            };
+
+            const tree: { [key: string]: TreeNode } = {};
+
+            // Process all items to build the tree
             repositoryItems.forEach((item) => {
               const parts = item.path.split("/");
-              if (parts.length === 1) {
-                // Root level item
-                if (!itemsByDir["."]) itemsByDir["."] = [];
-                itemsByDir["."].push({ name: item.name, type: item.type });
-              } else {
-                // Item in subdirectory
-                const dir = parts.slice(0, -1).join("/");
-                if (!itemsByDir[dir]) itemsByDir[dir] = [];
-                itemsByDir[dir].push({
-                  name: parts[parts.length - 1],
-                  type: item.type,
-                });
+              let current = tree;
+
+              // Navigate/create the tree structure
+              for (let i = 0; i < parts.length; i++) {
+                const part = parts[i];
+                const isLast = i === parts.length - 1;
+
+                if (!current[part]) {
+                  current[part] = {
+                    type: (isLast ? item.type : "dir") as "dir" | "file",
+                    children: isLast && item.type === "file" ? undefined : {},
+                  };
+                }
+
+                if (!isLast && current[part].children) {
+                  current = current[part].children!;
+                }
               }
             });
 
-            // Display items organized by directory
-            Object.keys(itemsByDir)
-              .sort()
-              .forEach((dir) => {
-                if (dir === ".") {
-                  addLog("info", "  Root:");
-                  itemsByDir[dir]
-                    .sort((a, b) => {
-                      // Sort directories first, then files
-                      if (a.type !== b.type) {
-                        return a.type === "dir" ? -1 : 1;
-                      }
-                      return a.name.localeCompare(b.name);
-                    })
-                    .forEach((item) => {
-                      const icon = item.type === "dir" ? "📁" : "📄";
-                      addLog("info", `    ${icon} ${item.name}`);
-                    });
+            // Function to render tree recursively
+            const renderTree = (
+              items: { [key: string]: TreeNode },
+              indent = "  ",
+              isRoot = true
+            ) => {
+              const sortedKeys = Object.keys(items).sort((a, b) => {
+                const aIsDir = items[a].type === "dir";
+                const bIsDir = items[b].type === "dir";
+                if (aIsDir !== bIsDir) {
+                  return aIsDir ? -1 : 1; // Directories first
+                }
+                return a.localeCompare(b);
+              });
+
+              sortedKeys.forEach((key) => {
+                const item = items[key];
+                const icon = item.type === "dir" ? "📁" : "📄";
+
+                if (isRoot) {
+                  addLog("info", `${indent}${icon} ${key}`);
                 } else {
-                  addLog("info", `  ${dir}/`);
-                  itemsByDir[dir]
-                    .sort((a, b) => {
-                      // Sort directories first, then files
-                      if (a.type !== b.type) {
-                        return a.type === "dir" ? -1 : 1;
-                      }
-                      return a.name.localeCompare(b.name);
-                    })
-                    .forEach((item) => {
-                      const icon = item.type === "dir" ? "📁" : "📄";
-                      addLog("info", `    ${icon} ${item.name}`);
-                    });
+                  addLog("info", `${indent}${icon} ${key}`);
+                }
+
+                if (item.children) {
+                  renderTree(item.children, `${indent}  `, false);
                 }
               });
+            };
+
+            addLog("info", "  Root:");
+            renderTree(tree);
           }
           updateMessage("Usage: load <filepath>", "warning");
         } else {
@@ -682,10 +700,66 @@ export default function LedgerInterface() {
       warning: "text-yellow-400",
     };
 
+    // Function to render clickable file paths
+    const renderClickableContent = (message: string) => {
+      // Pattern to match file paths in the tree structure
+      // Matches: "  📄 filename.ext" or "    📄 filename.ext" etc.
+      const filePattern = /^(\s*)(📄\s+)([^\s]+)$/;
+      const match = message.match(filePattern);
+
+      if (match) {
+        const [, indent, icon, fileName] = match;
+        return (
+          <>
+            <span className="text-gray-500 text-xs">{timestamp} </span>
+            <span className={typeColors[log.type]}>
+              {indent}
+              {icon}
+              <span
+                className="text-blue-400 hover:text-blue-300 cursor-pointer underline hover:no-underline transition-colors"
+                onClick={() => {
+                  // Extract the full path from the repository items
+                  const fullPath = repositoryItems.find(
+                    (item) => item.name === fileName && item.type === "file"
+                  )?.path;
+
+                  if (fullPath) {
+                    loadFile(fullPath)
+                      .then(() => {
+                        setCurrentFilePath(fullPath);
+                        addLog("success", `Loaded file: ${fullPath}`);
+                        updateMessage(`Loaded file: ${fullPath}`, "success");
+                      })
+                      .catch((error) => {
+                        addLog(
+                          "error",
+                          `Failed to load file: ${error.message}`
+                        );
+                        updateMessage("Failed to load file", "error");
+                      });
+                  }
+                }}
+                title={`Click to load ${fileName}`}
+              >
+                {fileName}
+              </span>
+            </span>
+          </>
+        );
+      }
+
+      // For non-file messages, render normally
+      return (
+        <>
+          <span className="text-gray-500 text-xs">{timestamp} </span>
+          <span className={typeColors[log.type]}>{message}</span>
+        </>
+      );
+    };
+
     return (
-      <div key={log.id} className="flex gap-2 text-sm font-mono">
-        <span className="text-gray-500 text-xs">{timestamp}</span>
-        <span className={typeColors[log.type]}>{log.message}</span>
+      <div key={log.id} className="text-sm font-mono whitespace-pre">
+        {renderClickableContent(log.message)}
       </div>
     );
   };
