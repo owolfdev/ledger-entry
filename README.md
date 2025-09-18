@@ -7,7 +7,7 @@ Project docs have moved to `docs/`.
 
 # Ledger Entry
 
-A natural language interface for Ledger that makes it easy to use ledger remotely and on mobile devices. This app adds natural language input to ledger formatted entry parsing, enabling users to interact with ledger through a modern web interface.
+A natural language interface for Ledger CLI with GitHub-backed storage. This app adds natural language input to ledger formatted entry parsing, enabling users to interact with ledger through a modern web interface.
 
 ## Features
 

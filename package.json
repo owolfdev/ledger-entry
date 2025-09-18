@@ -1,4 +1,6 @@
 {
+  "name": "ledger-entry",
+  "description": "A natural language interface for Ledger CLI with GitHub-backed storage",
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
