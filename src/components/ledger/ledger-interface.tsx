@@ -168,26 +168,69 @@ export default function LedgerInterface() {
                 {icon}
                 <span
                   className="text-blue-400 hover:text-blue-300 cursor-pointer underline hover:no-underline transition-colors"
-                  onClick={() => {
+                  onClick={async () => {
                     // Extract the full path from the repository items
                     const fullPath = repositoryItems.find(
                       (item) => item.name === fileName && item.type === "file"
                     )?.path;
 
                     if (fullPath) {
-                      loadFile(fullPath)
-                        .then(() => {
-                          setCurrentFilePath(fullPath);
-                          addLog("success", `Loaded file: ${fullPath}`);
-                          updateMessage(`Loaded file: ${fullPath}`, "success");
-                        })
-                        .catch((error) => {
-                          addLog(
-                            "error",
-                            `Failed to load file: ${error.message}`
-                          );
-                          updateMessage("Failed to load file", "error");
-                        });
+                      // Add loading message
+                      const loadingLogId = Date.now().toString();
+                      addLog(
+                        "loading",
+                        `📄 Loading file from repository: ${fullPath}`
+                      );
+
+                      // Add intermediate progress message
+                      setTimeout(() => {
+                        addLog(
+                          "info",
+                          `   → Fetching file content from GitHub API...`
+                        );
+                      }, 200);
+
+                      try {
+                        await loadFile(fullPath);
+
+                        // Add editor loading message
+                        const editorLoadingLogId = Date.now().toString();
+                        addLog("loading", "   → Applying content to editor...");
+
+                        // Simulate editor loading time
+                        await new Promise((resolve) =>
+                          setTimeout(resolve, 300)
+                        );
+
+                        // Remove all loading messages and add success
+                        setLogs((prev) =>
+                          prev.filter(
+                            (log) =>
+                              log.id !== loadingLogId &&
+                              log.id !== editorLoadingLogId
+                          )
+                        );
+                        setCurrentFilePath(fullPath);
+                        addLog("success", `Loaded file: ${fullPath}`);
+                        updateMessage(`Loaded file: ${fullPath}`, "success");
+                      } catch (error) {
+                        // Remove all loading messages and add error
+                        setLogs((prev) =>
+                          prev.filter(
+                            (log) =>
+                              log.id !== loadingLogId &&
+                              !log.message.includes(
+                                "Applying content to editor"
+                              )
+                          )
+                        );
+                        const errorMessage =
+                          error instanceof Error
+                            ? error.message
+                            : "Failed to load file";
+                        addLog("error", `Failed to load file: ${errorMessage}`);
+                        updateMessage("Failed to load file", "error");
+                      }
                     }
                   }}
                   title={`Click to load ${fileName}`}
@@ -214,7 +257,14 @@ export default function LedgerInterface() {
         </div>
       );
     },
-    [repositoryItems, loadFile, setCurrentFilePath, addLog, updateMessage]
+    [
+      repositoryItems,
+      loadFile,
+      setCurrentFilePath,
+      addLog,
+      updateMessage,
+      setLogs,
+    ]
   );
 
   // Add initial log message on client side only

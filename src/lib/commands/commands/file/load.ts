@@ -34,9 +34,18 @@ export const loadCommand: Command = {
     try {
       await context.fileOperations.loadFile(filePath);
 
-      // Remove loading message and add success
+      // Add editor loading message
+      const editorLoadingLogId = Date.now().toString();
+      context.logger.addLog("loading", "   → Applying content to editor...");
+
+      // Simulate editor loading time
+      await new Promise((resolve) => setTimeout(resolve, 300));
+
+      // Remove all loading messages and add success
       context.logger.setLogs(
-        context.logger.logs.filter((log) => log.id !== loadingLogId)
+        context.logger.logs.filter(
+          (log) => log.id !== loadingLogId && log.id !== editorLoadingLogId
+        )
       );
       context.setCurrentFilePath(filePath);
       context.logger.addLog("success", `Loaded file: ${filePath}`);
@@ -47,9 +56,13 @@ export const loadCommand: Command = {
         message: `Loaded file: ${filePath}`,
       };
     } catch (error) {
-      // Remove loading message and add error
+      // Remove all loading messages and add error
       context.logger.setLogs(
-        context.logger.logs.filter((log) => log.id !== loadingLogId)
+        context.logger.logs.filter(
+          (log) =>
+            log.id !== loadingLogId &&
+            !log.message.includes("Applying content to editor")
+        )
       );
       const errorMessage =
         error instanceof Error ? error.message : "Failed to load file";
