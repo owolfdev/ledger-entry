@@ -70,7 +70,7 @@ export function RepositoryList({ repositories }: RepositoryListProps) {
                 </div>
                 <Badge
                   variant="default"
-                  className={`text-xs text-white ${getPermissionColor(repo)}`}
+                  className={`text-xs ${getPermissionColor(repo)}`}
                 >
                   {getPermissionLevel(repo)}
                 </Badge>

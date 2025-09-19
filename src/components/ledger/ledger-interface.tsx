@@ -841,7 +841,7 @@ function TerminalPanel({
               onChange={handleCommandChange}
               onKeyDown={handleKeyDown}
               placeholder="Enter command..."
-              className="flex-1 bg-transparent text-white placeholder-gray-500 focus:outline-none font-mono resize-none overflow-hidden min-h-6 px-2 py-1"
+              className="flex-1 bg-transparent text-foreground placeholder-muted-foreground focus:outline-none font-mono resize-none overflow-hidden min-h-6 px-2 py-1"
               rows={1}
               style={{ lineHeight: "1.5" }}
             />
@@ -917,7 +917,7 @@ function EditorPanel({
               onClick={toggleVimMode}
               className={
                 vimModeEnabled
-                  ? "bg-green-600 hover:bg-green-700 text-white border-green-600"
+                  ? "bg-green-600 hover:bg-green-700 text-white border-green-600 dark:bg-green-700 dark:hover:bg-green-800"
                   : ""
               }
             >
