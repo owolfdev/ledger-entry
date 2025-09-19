@@ -25,6 +25,7 @@ import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Save, FileText } from "lucide-react";
+import type { LogMessage } from "@/lib/commands/types";
 
 // Type declaration for Monaco global
 declare global {
@@ -95,21 +96,7 @@ interface EditorPanelProps {
     message: string
   ) => void;
   setLogs: (
-    logs:
-      | Array<{ id: string; type: string; message: string; timestamp: Date }>
-      | ((
-          prev: Array<{
-            id: string;
-            type: string;
-            message: string;
-            timestamp: Date;
-          }>
-        ) => Array<{
-          id: string;
-          type: string;
-          message: string;
-          timestamp: Date;
-        }>)
+    logs: LogMessage[] | ((prev: LogMessage[]) => LogMessage[])
   ) => void;
   updateMessage: (
     text: string,
