@@ -2,6 +2,7 @@ import Link from "next/link";
 import { LayoutToggles } from "./layout-toggles";
 import { MobileNav } from "./mobile-nav";
 import { GitHubAuthButton } from "@/components/github-auth-button";
+import { ThemeSwitcher } from "@/components/theme-switcher";
 
 export function LedgerHeader() {
   return (
@@ -36,6 +37,7 @@ export function LedgerHeader() {
 
         {/* Right Side Controls */}
         <div className="ml-auto flex items-center gap-4">
+          <ThemeSwitcher />
           <LayoutToggles />
           <GitHubAuthButton />
         </div>
