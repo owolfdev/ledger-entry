@@ -62,7 +62,7 @@ export function LayoutToggles() {
       {isMobile ? (
         /* Mobile: Single toggle button */
         <Button
-          variant="default"
+          variant="outline"
           size="sm"
           onClick={toggleMobile}
           className="h-8 w-8 p-0"
@@ -78,7 +78,7 @@ export function LayoutToggles() {
         /* Desktop: Two separate toggle buttons */
         <>
           <Button
-            variant={showTerminal ? "default" : "ghost"}
+            variant={showTerminal ? "outline" : "outline"}
             size="sm"
             onClick={toggleTerminal}
             className="h-8 w-8 p-0"
@@ -88,7 +88,7 @@ export function LayoutToggles() {
           </Button>
 
           <Button
-            variant={showEditor ? "default" : "ghost"}
+            variant={showEditor ? "outline" : "outline"}
             size="sm"
             onClick={toggleEditor}
             className="h-8 w-8 p-0"
