@@ -89,6 +89,32 @@ interface EditorPanelProps {
   vimModeEnabled: boolean;
   toggleVimMode: () => void;
   onEditorFocused: () => void;
+  saveFile: (content: string, message?: string) => Promise<void>;
+  addLog: (
+    type: "info" | "success" | "error" | "warning" | "loading",
+    message: string
+  ) => void;
+  setLogs: (
+    logs:
+      | Array<{ id: string; type: string; message: string; timestamp: Date }>
+      | ((
+          prev: Array<{
+            id: string;
+            type: string;
+            message: string;
+            timestamp: Date;
+          }>
+        ) => Array<{
+          id: string;
+          type: string;
+          message: string;
+          timestamp: Date;
+        }>)
+  ) => void;
+  updateMessage: (
+    text: string,
+    type: "info" | "success" | "warning" | "error"
+  ) => void;
 }
 
 export function EditorPanel({
@@ -106,6 +132,10 @@ export function EditorPanel({
   vimModeEnabled,
   toggleVimMode,
   onEditorFocused,
+  saveFile,
+  addLog,
+  setLogs,
+  updateMessage,
 }: EditorPanelProps) {
   // Get current theme from next-themes
   const { theme, systemTheme } = useTheme();
@@ -125,6 +155,35 @@ export function EditorPanel({
       }
     }
   }, [monacoTheme, editorRef]);
+
+  // Handle save functionality
+  const handleSave = async () => {
+    // Add loading message to terminal
+    const loadingLogId = Date.now().toString();
+    addLog("loading", `💾 Saving file: ${fileName}`);
+
+    // Add intermediate progress message
+    setTimeout(() => {
+      addLog("info", "   → Uploading changes to GitHub...");
+    }, 200);
+
+    try {
+      await saveFile(ledgerContent, `Update ${fileName}`);
+
+      // Remove loading message and add success
+      setLogs((prev) => prev.filter((log) => log.id !== loadingLogId));
+      setIsModified(false);
+      addLog("success", `File saved: ${fileName}`);
+      updateMessage("File saved successfully!", "success");
+    } catch (error) {
+      // Remove loading message and add error
+      setLogs((prev) => prev.filter((log) => log.id !== loadingLogId));
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to save file";
+      addLog("error", `Failed to save file: ${errorMessage}`);
+      updateMessage("Failed to save file", "error");
+    }
+  };
 
   return (
     <div className="h-full flex flex-col editor">
@@ -156,7 +215,8 @@ export function EditorPanel({
             <Button
               variant="outline"
               size="sm"
-              onClick={() => setIsModified(false)}
+              onClick={handleSave}
+              disabled={!isModified}
             >
               <Save className="w-3 h-3 mr-1" />
               Save

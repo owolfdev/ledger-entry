@@ -71,7 +71,7 @@ export default function LedgerInterface() {
   const [, setIsLoadingFiles] = useState(false);
 
   // File operations hook
-  const { currentFile, loadFile } = useFileOperations({
+  const { currentFile, loadFile, saveFile } = useFileOperations({
     owner: repository?.owner || "",
     repo: repository?.repo || "",
   });
@@ -408,10 +408,7 @@ export default function LedgerInterface() {
       repository,
       fileOperations: {
         loadFile,
-        saveFile: async (content: string, message?: string) => {
-          // This would need to be implemented to actually save files
-          console.log("Save file:", content, message);
-        },
+        saveFile,
         updateContent: setLedgerContent,
         clearFile: () => {
           setLedgerContent("");
@@ -446,6 +443,7 @@ export default function LedgerInterface() {
     [
       repository,
       loadFile,
+      saveFile,
       currentFile,
       isModified,
       addLog,
@@ -603,6 +601,10 @@ export default function LedgerInterface() {
                 onEditorFocused={() => {
                   lastFocusedRef.current = "editor";
                 }}
+                saveFile={saveFile}
+                addLog={addLog}
+                setLogs={setLogs}
+                updateMessage={updateMessage}
               />
             </Panel>
           </PanelGroup>
@@ -642,6 +644,10 @@ export default function LedgerInterface() {
               onEditorFocused={() => {
                 lastFocusedRef.current = "editor";
               }}
+              saveFile={saveFile}
+              addLog={addLog}
+              setLogs={setLogs}
+              updateMessage={updateMessage}
             />
           </div>
         ) : (
