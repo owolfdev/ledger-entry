@@ -326,7 +326,7 @@ export default function LedgerInterface() {
       const loadingLog: LogMessage = {
         id: loadingLogId,
         type: "loading",
-        message: "🔗 Connecting to GitHub repository...",
+        message: "🔗 Connecting to GitHub repository",
         timestamp: new Date(),
       };
       setLogs((prev) => [...prev, loadingLog]);
@@ -385,7 +385,7 @@ export default function LedgerInterface() {
       const loadingLog: LogMessage = {
         id: loadingLogId,
         type: "loading",
-        message: "📁 Scanning repository structure and loading files...",
+        message: "📁 Scanning repository structure and loading files",
         timestamp: new Date(),
       };
       setLogs((prev) => [...prev, loadingLog]);
