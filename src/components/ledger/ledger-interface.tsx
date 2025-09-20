@@ -282,14 +282,13 @@ export default function LedgerInterface() {
 
                     if (fullPath) {
                       // Add loading message
-                      const loadingLogId = Date.now().toString();
                       addLog(
                         "loading",
                         `📄 Loading file from repository: ${fullPath}`
                       );
 
-                      // Add intermediate progress message
-                      setTimeout(() => {
+                      // Add intermediate progress message with ID
+                      const progressTimeout = setTimeout(() => {
                         addLog(
                           "info",
                           `   → Fetching file content from GitHub API...`
@@ -299,21 +298,29 @@ export default function LedgerInterface() {
                       try {
                         await loadFile(fullPath);
 
-                        // Add editor loading message
-                        const editorLoadingLogId = Date.now().toString();
-                        addLog("loading", "   → Applying content to editor...");
+                        addLog("loading", "   → Applying content to editor");
 
                         // Simulate editor loading time
                         await new Promise((resolve) =>
                           setTimeout(resolve, 300)
                         );
 
-                        // Remove all loading messages and add success
+                        // Clear the progress timeout
+                        clearTimeout(progressTimeout);
+
+                        // Remove all loading messages for this specific file load
                         setLogs((prev) =>
                           prev.filter(
                             (log) =>
-                              log.id !== loadingLogId &&
-                              log.id !== editorLoadingLogId
+                              !log.message.includes(
+                                `Loading file from repository: ${fullPath}`
+                              ) &&
+                              !log.message.includes(
+                                "Fetching file content from GitHub API"
+                              ) &&
+                              !log.message.includes(
+                                "Applying content to editor"
+                              )
                           )
                         );
                         setCurrentFilePath(fullPath);
@@ -328,11 +335,19 @@ export default function LedgerInterface() {
                         addLog("success", `Loaded file: ${fullPath}`);
                         updateMessage(`Loaded file: ${fullPath}`, "success");
                       } catch (error) {
-                        // Remove all loading messages and add error
+                        // Clear the progress timeout
+                        clearTimeout(progressTimeout);
+
+                        // Remove all loading messages for this specific file load
                         setLogs((prev) =>
                           prev.filter(
                             (log) =>
-                              log.id !== loadingLogId &&
+                              !log.message.includes(
+                                `Loading file from repository: ${fullPath}`
+                              ) &&
+                              !log.message.includes(
+                                "Fetching file content from GitHub API"
+                              ) &&
                               !log.message.includes(
                                 "Applying content to editor"
                               )

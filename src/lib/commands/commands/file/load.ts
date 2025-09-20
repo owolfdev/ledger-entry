@@ -249,7 +249,6 @@ export const loadCommand: Command = {
     }
 
     // Add loading message
-    const loadingLogId = Date.now().toString();
     context.logger.addLog(
       "loading",
       `📄 Loading file from repository: ${displayPath}`
@@ -267,17 +266,20 @@ export const loadCommand: Command = {
     try {
       await context.fileOperations.loadFile(filePath);
 
-      // Add editor loading message
-      const editorLoadingLogId = Date.now().toString();
-      context.logger.addLog("loading", "   → Applying content to editor...");
+      context.logger.addLog("loading", "   → Applying content to editor");
 
       // Simulate editor loading time
       await new Promise((resolve) => setTimeout(resolve, 300));
 
-      // Remove all loading messages and add success
+      // Remove all loading messages for this specific file load
       context.logger.setLogs(
         context.logger.logs.filter(
-          (log) => log.id !== loadingLogId && log.id !== editorLoadingLogId
+          (log) =>
+            !log.message.includes(
+              `Loading file from repository: ${displayPath}`
+            ) &&
+            !log.message.includes("Fetching file content from GitHub API") &&
+            !log.message.includes("Applying content to editor")
         )
       );
       context.setCurrentFilePath(filePath);
@@ -298,11 +300,14 @@ export const loadCommand: Command = {
         message: `Loaded file: ${filePath}`,
       };
     } catch (error) {
-      // Remove all loading messages and add error
+      // Remove all loading messages for this specific file load
       context.logger.setLogs(
         context.logger.logs.filter(
           (log) =>
-            log.id !== loadingLogId &&
+            !log.message.includes(
+              `Loading file from repository: ${displayPath}`
+            ) &&
+            !log.message.includes("Fetching file content from GitHub API") &&
             !log.message.includes("Applying content to editor")
         )
       );
