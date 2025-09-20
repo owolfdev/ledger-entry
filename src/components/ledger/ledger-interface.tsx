@@ -321,21 +321,19 @@ export default function LedgerInterface() {
       setIsConnectingToRepo(true);
       repositoryLoadedRef.current = true;
 
-      // Add loading message
+      // Add loading message with specific ID
       const loadingLogId = Date.now().toString();
-      addLogRef.current("loading", "🔗 Connecting to GitHub repository...");
+      const loadingLog: LogMessage = {
+        id: loadingLogId,
+        type: "loading",
+        message: "🔗 Connecting to GitHub repository...",
+        timestamp: new Date(),
+      };
+      setLogs((prev) => [...prev, loadingLog]);
 
       try {
-        // Add intermediate progress message
-        const timeoutId = setTimeout(() => {
-          addLogRef.current(
-            "info",
-            "   → Fetching repository information from database..."
-          );
-        }, 500);
-        addTimeoutRef.current(timeoutId);
-
         const response = await fetch("/api/ledger/repos");
+
         if (response.ok) {
           const data = await response.json();
           if (data.connectedRepo) {
@@ -382,26 +380,21 @@ export default function LedgerInterface() {
       setIsLoadingFiles(true);
       filesLoadedRef.current = repoKey;
 
-      // Add loading message
+      // Add loading message with specific ID
       const loadingLogId = Date.now().toString();
-      addLogRef.current(
-        "loading",
-        "📁 Scanning repository structure and loading files..."
-      );
+      const loadingLog: LogMessage = {
+        id: loadingLogId,
+        type: "loading",
+        message: "📁 Scanning repository structure and loading files...",
+        timestamp: new Date(),
+      };
+      setLogs((prev) => [...prev, loadingLog]);
 
       try {
-        // Add intermediate progress message
-        const timeoutId = setTimeout(() => {
-          addLogRef.current(
-            "info",
-            "   → Querying GitHub API for file tree..."
-          );
-        }, 300);
-        addTimeoutRef.current(timeoutId);
-
         const response = await fetch(
           `/api/github/files?owner=${repository.owner}&repo=${repository.repo}`
         );
+
         if (response.ok) {
           const data = await response.json();
           const items = data.files || [];
