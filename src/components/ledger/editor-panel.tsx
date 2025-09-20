@@ -146,7 +146,6 @@ export function EditorPanel({
   // Handle save functionality
   const handleSave = async () => {
     // Add loading message to terminal
-    const loadingLogId = Date.now().toString();
     addLog("loading", `💾 Saving file: ${fileName}`);
 
     // Add intermediate progress message
@@ -157,14 +156,26 @@ export function EditorPanel({
     try {
       await saveFile(ledgerContent, `Update ${fileName}`);
 
-      // Remove loading message and add success
-      setLogs((prev) => prev.filter((log) => log.id !== loadingLogId));
+      // Remove loading messages and add success
+      setLogs((prev) =>
+        prev.filter(
+          (log) =>
+            !log.message.includes(`💾 Saving file: ${fileName}`) &&
+            !log.message.includes("   → Uploading changes to GitHub...")
+        )
+      );
       setIsModified(false);
       addLog("success", `File saved: ${fileName}`);
       updateMessage("File saved successfully!", "success");
     } catch (error) {
-      // Remove loading message and add error
-      setLogs((prev) => prev.filter((log) => log.id !== loadingLogId));
+      // Remove loading messages and add error
+      setLogs((prev) =>
+        prev.filter(
+          (log) =>
+            !log.message.includes(`💾 Saving file: ${fileName}`) &&
+            !log.message.includes("   → Uploading changes to GitHub...")
+        )
+      );
       const errorMessage =
         error instanceof Error ? error.message : "Failed to save file";
       addLog("error", `Failed to save file: ${errorMessage}`);
