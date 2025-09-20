@@ -8,7 +8,13 @@ export const clearCommand: Command = {
     args: string[],
     context: CommandContext
   ): Promise<CommandResult> => {
+    // Clear all pending timeouts to prevent async logs from appearing after clear
+    context.logger.clearAllTimeouts();
+
+    // Clear all logs including the command that was just logged
     context.logger.setLogs([]);
+
+    // Update the message area to show that terminal was cleared
     context.updateMessage(
       "Terminal cleared. Type 'help' for available commands.",
       "info"

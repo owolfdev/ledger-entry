@@ -60,8 +60,10 @@ export function useCommandSystem({ context }: UseCommandSystemProps) {
         return;
       }
 
-      // Add command to logs
-      context.logger.addLog("info", `> ${input}`);
+      // Add command to logs (except for clear command to avoid logging it)
+      if (command !== "clear") {
+        context.logger.addLog("info", `> ${input}`);
+      }
 
       try {
         // Execute command through registry

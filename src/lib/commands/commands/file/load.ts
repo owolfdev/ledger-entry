@@ -24,12 +24,13 @@ export const loadCommand: Command = {
     );
 
     // Add intermediate progress message
-    setTimeout(() => {
+    const timeoutId = setTimeout(() => {
       context.logger.addLog(
         "info",
         `   → Fetching file content from GitHub API...`
       );
     }, 200);
+    context.logger.addTimeout(timeoutId);
 
     try {
       await context.fileOperations.loadFile(filePath);

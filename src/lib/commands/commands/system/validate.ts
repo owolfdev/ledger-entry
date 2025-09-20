@@ -17,15 +17,16 @@ export const validateCommand: Command = {
     context.updateMessage("Validating entries...", "info");
 
     // Add intermediate progress message
-    setTimeout(() => {
+    const timeoutId = setTimeout(() => {
       context.logger.addLog(
         "info",
         "   → Parsing ledger entries and calculating balances..."
       );
     }, 100);
+    context.logger.addTimeout(timeoutId);
 
     return new Promise((resolve) => {
-      setTimeout(() => {
+      const mainTimeoutId = setTimeout(() => {
         // Remove loading message and add success
         context.logger.setLogs(
           context.logger.logs.filter((log) => log.id !== validateLoadingLogId)
@@ -41,6 +42,7 @@ export const validateCommand: Command = {
           message: "All entries are valid! Your ledger is balanced.",
         });
       }, 500);
+      context.logger.addTimeout(mainTimeoutId);
     });
   },
 };

@@ -106,16 +106,54 @@ export default function LedgerInterface() {
     useVimMode();
   const { lastFocusedRef } = useKeyboardShortcuts();
 
+  // Timeout tracking for clearing pending async operations
+  const timeoutsRef = useRef<Set<NodeJS.Timeout>>(new Set());
+
+  // Track if initialization log has been added
+  const initializationLoggedRef = useRef(false);
+
+  // Track if repository has been loaded
+  const repositoryLoadedRef = useRef(false);
+
+  // Track if files have been loaded for current repository
+  const filesLoadedRef = useRef<string | null>(null);
+
   // Add log function (defined early so it can be used in useEffect)
   const addLog = useCallback((type: LogMessage["type"], message: string) => {
     const newLog: LogMessage = {
-      id: typeof window !== "undefined" ? Date.now().toString() : "",
+      id:
+        typeof window !== "undefined"
+          ? `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+          : "",
       type,
       message,
       timestamp: typeof window !== "undefined" ? new Date() : new Date(0), // Use epoch for SSR
     };
     setLogs((prev) => [...prev, newLog]);
   }, []);
+
+  // Add timeout to tracking
+  const addTimeout = useCallback((timeoutId: NodeJS.Timeout) => {
+    timeoutsRef.current.add(timeoutId);
+  }, []);
+
+  // Clear all tracked timeouts
+  const clearAllTimeouts = useCallback(() => {
+    timeoutsRef.current.forEach((timeoutId) => {
+      clearTimeout(timeoutId);
+    });
+    timeoutsRef.current.clear();
+  }, []);
+
+  // Refs for functions to avoid dependency issues
+  const addLogRef = useRef(addLog);
+  const addTimeoutRef = useRef(addTimeout);
+
+  // Update refs when functions change
+  useEffect(() => {
+    addLogRef.current = addLog;
+    addTimeoutRef.current = addTimeout;
+  }, [addLog, addTimeout]);
 
   const updateMessage = useCallback(
     (text: string, type: "info" | "success" | "warning" | "error" = "info") => {
@@ -267,28 +305,35 @@ export default function LedgerInterface() {
     ]
   );
 
-  // Add initial log message on client side only
+  // Add initial log message on client side only (run once on mount)
   useEffect(() => {
-    addLog("info", "Ledger CLI Interface initialized");
+    if (!initializationLoggedRef.current) {
+      addLog("info", "Ledger CLI Interface initialized");
+      initializationLoggedRef.current = true;
+    }
   }, [addLog]);
 
   // Load connected repository
   useEffect(() => {
     const loadRepository = async () => {
+      if (repositoryLoadedRef.current) return;
+
       setIsConnectingToRepo(true);
+      repositoryLoadedRef.current = true;
 
       // Add loading message
       const loadingLogId = Date.now().toString();
-      addLog("loading", "🔗 Connecting to GitHub repository...");
+      addLogRef.current("loading", "🔗 Connecting to GitHub repository...");
 
       try {
         // Add intermediate progress message
-        setTimeout(() => {
-          addLog(
+        const timeoutId = setTimeout(() => {
+          addLogRef.current(
             "info",
             "   → Fetching repository information from database..."
           );
         }, 500);
+        addTimeoutRef.current(timeoutId);
 
         const response = await fetch("/api/ledger/repos");
         if (response.ok) {
@@ -301,14 +346,14 @@ export default function LedgerInterface() {
 
             // Remove loading message and add success
             setLogs((prev) => prev.filter((log) => log.id !== loadingLogId));
-            addLog(
+            addLogRef.current(
               "success",
               `Connected to repository: ${data.connectedRepo.repo_full_name}`
             );
           } else {
             // Remove loading message and add warning
             setLogs((prev) => prev.filter((log) => log.id !== loadingLogId));
-            addLog(
+            addLogRef.current(
               "warning",
               "No repository connected. Use 'files' to see available files."
             );
@@ -317,34 +362,42 @@ export default function LedgerInterface() {
       } catch {
         // Remove loading message and add error
         setLogs((prev) => prev.filter((log) => log.id !== loadingLogId));
-        addLog("error", "Failed to load repository information");
+        addLogRef.current("error", "Failed to load repository information");
       } finally {
         setIsConnectingToRepo(false);
       }
     };
 
     loadRepository();
-  }, [addLog]);
+  }, []); // Empty dependency array to run only once
 
   // Load available files when repository is connected
   useEffect(() => {
     const loadFiles = async () => {
       if (!repository) return;
 
+      const repoKey = `${repository.owner}/${repository.repo}`;
+      if (filesLoadedRef.current === repoKey) return;
+
       setIsLoadingFiles(true);
+      filesLoadedRef.current = repoKey;
 
       // Add loading message
       const loadingLogId = Date.now().toString();
-      addLog(
+      addLogRef.current(
         "loading",
         "📁 Scanning repository structure and loading files..."
       );
 
       try {
         // Add intermediate progress message
-        setTimeout(() => {
-          addLog("info", "   → Querying GitHub API for file tree...");
+        const timeoutId = setTimeout(() => {
+          addLogRef.current(
+            "info",
+            "   → Querying GitHub API for file tree..."
+          );
         }, 300);
+        addTimeoutRef.current(timeoutId);
 
         const response = await fetch(
           `/api/github/files?owner=${repository.owner}&repo=${repository.repo}`
@@ -359,19 +412,19 @@ export default function LedgerInterface() {
 
           // Remove loading message and add success
           setLogs((prev) => prev.filter((log) => log.id !== loadingLogId));
-          addLog("info", `Found ${fileCount} files in repository`);
+          addLogRef.current("info", `Found ${fileCount} files in repository`);
         }
       } catch {
         // Remove loading message and add error
         setLogs((prev) => prev.filter((log) => log.id !== loadingLogId));
-        addLog("error", "Failed to load repository files");
+        addLogRef.current("error", "Failed to load repository files");
       } finally {
         setIsLoadingFiles(false);
       }
     };
 
     loadFiles();
-  }, [repository, addLog]);
+  }, [repository]); // Only depend on repository, not addLog
 
   // Auto-scroll logs to bottom
   useEffect(() => {
@@ -423,6 +476,8 @@ export default function LedgerInterface() {
         addLog,
         setLogs,
         logs,
+        addTimeout,
+        clearAllTimeouts,
       },
       editor: {
         setLedgerContent,
@@ -449,6 +504,8 @@ export default function LedgerInterface() {
       addLog,
       setLogs,
       logs,
+      addTimeout,
+      clearAllTimeouts,
       setLedgerContent,
       setIsModified,
       ledgerContent,

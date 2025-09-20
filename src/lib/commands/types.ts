@@ -40,6 +40,8 @@ export interface Logger {
   addLog: (type: LogMessage["type"], message: string) => void;
   setLogs: (logs: LogMessage[]) => void;
   logs: LogMessage[];
+  clearAllTimeouts: () => void;
+  addTimeout: (timeoutId: NodeJS.Timeout) => void;
 }
 
 export interface CommandContext {

@@ -13,9 +13,10 @@ export const filesCommand: Command = {
     context.logger.addLog("loading", "📁 Scanning repository structure...");
 
     // Add intermediate progress message
-    setTimeout(() => {
+    const timeoutId = setTimeout(() => {
       context.logger.addLog("info", "   → Building file tree structure...");
     }, 200);
+    context.logger.addTimeout(timeoutId);
 
     try {
       // Simulate a small delay to show loading indicator
