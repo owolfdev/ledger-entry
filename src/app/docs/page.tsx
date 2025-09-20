@@ -1,7 +1,7 @@
 import { readdir, stat } from "fs/promises";
 import { join } from "path";
 import Link from "next/link";
-import { FileText, Folder, FolderOpen, Menu } from "lucide-react";
+import { FileText, Folder, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -117,7 +117,7 @@ export default async function DocsPage() {
   const docs = await getDocsStructure();
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="h-full bg-background">
       <div className="container mx-auto px-6 py-8">
         <div className="max-w-7xl mx-auto">
           <div className="mb-8">

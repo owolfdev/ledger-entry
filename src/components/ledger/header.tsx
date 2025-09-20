@@ -4,7 +4,11 @@ import { MobileNav } from "./mobile-nav";
 import { GitHubAuthButton } from "@/components/github-auth-button";
 import { ThemeSwitcher } from "@/components/theme-switcher";
 
-export function LedgerHeader() {
+interface AppHeaderProps {
+  showLayoutToggles?: boolean;
+}
+
+export function AppHeader({ showLayoutToggles = false }: AppHeaderProps) {
   return (
     <header className="border-b border-border bg-card/50 backdrop-blur supports-[backdrop-filter]:bg-card/50">
       <div className="px-6 py-3 flex items-center">
@@ -44,7 +48,7 @@ export function LedgerHeader() {
         {/* Right Side Controls */}
         <div className="ml-auto flex items-center gap-4">
           <ThemeSwitcher />
-          <LayoutToggles />
+          {showLayoutToggles && <LayoutToggles />}
           <GitHubAuthButton />
         </div>
       </div>

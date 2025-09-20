@@ -676,7 +676,7 @@ export default function LedgerInterface() {
   // Don't render until settings are loaded to prevent flickering
   if (!isLoaded) {
     return (
-      <div className="h-screen w-full flex items-center justify-center bg-background">
+      <div className="h-full w-full flex items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-2">
           <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
           <span className="text-sm text-muted-foreground">Loading...</span>

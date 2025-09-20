@@ -163,7 +163,7 @@ async function getDocContent(
       : slug[slug.length - 1].replace(/-/g, " ");
 
     return { content, title };
-  } catch (error) {
+  } catch {
     return null;
   }
 }
@@ -171,19 +171,20 @@ async function getDocContent(
 export default async function DocPage({
   params,
 }: {
-  params: { slug: string[] };
+  params: Promise<{ slug: string[] }>;
 }) {
+  const { slug } = await params;
   const docs = await getDocsStructure();
-  const docContent = await getDocContent(params.slug);
+  const docContent = await getDocContent(slug);
 
   if (!docContent) {
     notFound();
   }
 
-  const currentPath = params.slug.join("/");
+  const currentPath = slug.join("/");
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="h-full bg-background">
       <div className="container mx-auto px-6 py-8">
         <div className="max-w-7xl mx-auto">
           {/* Breadcrumb */}
@@ -283,7 +284,7 @@ export default async function DocPage({
                         .replace(/\n\n/g, '</p><p class="mb-4">')
                         .replace(/^(?!<[h|l|p|d|a|s])/gm, '<p class="mb-4">')
                         .replace(
-                          /(<li[^>]*>.*<\/li>)/gs,
+                          /(<li[^>]*>.*<\/li>)/g,
                           '<ul class="list-disc list-inside mb-4">$1</ul>'
                         ),
                     }}
