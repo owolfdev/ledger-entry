@@ -9,7 +9,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Menu, FileText, Home } from "lucide-react";
+import { Menu, FileText, Home, Settings } from "lucide-react";
 
 export function MobileNav() {
   const [open, setOpen] = useState(false);
@@ -45,6 +45,16 @@ export function MobileNav() {
           >
             <FileText className="h-4 w-4" />
             Documentation
+          </Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem asChild>
+          <Link
+            href="/configure-github"
+            className="flex items-center gap-2 w-full"
+            onClick={() => setOpen(false)}
+          >
+            <Settings className="h-4 w-4" />
+            Configure GitHub
           </Link>
         </DropdownMenuItem>
       </DropdownMenuContent>

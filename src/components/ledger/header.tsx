@@ -17,6 +17,12 @@ export function LedgerHeader() {
             Ledger Entry
           </Link>
           <Link
+            href="/docs"
+            className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+          >
+            Docs
+          </Link>
+          <Link
             href="/configure-github"
             className="text-sm text-muted-foreground hover:text-foreground transition-colors"
           >
