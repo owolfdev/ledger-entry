@@ -32,6 +32,30 @@ export const helpCommand: Command = {
       "info",
       "  load <filepath>  - Load a file from repository"
     );
+    context.logger.addLog(
+      "info",
+      "  load -j <journal> - Load journal with shortcuts:"
+    );
+    context.logger.addLog(
+      "info",
+      "                   • current - current month"
+    );
+    context.logger.addLog(
+      "info",
+      "                   • latest - most recent journal"
+    );
+    context.logger.addLog(
+      "info",
+      "                   • <month> - specific month (1-12)"
+    );
+    context.logger.addLog(
+      "info",
+      "                   • <month-name> - specific month (january, sep, etc.)"
+    );
+    context.logger.addLog(
+      "info",
+      "                   • <year-month> - specific YYYY-MM"
+    );
     context.logger.addLog("info", "  save             - Save current file");
     context.logger.addLog("info", "");
     context.logger.addLog("info", "✏️ Transaction Commands:");
@@ -53,7 +77,7 @@ export const helpCommand: Command = {
     context.logger.addLog("info", "");
     context.logger.addLog(
       "success",
-      "💡 Try 'files' to see repository structure or 'journals' for journal files"
+      "💡 Try 'files' to see repository structure, 'journals' for journal files, or 'load -j current' for quick journal loading"
     );
 
     context.updateMessage(
