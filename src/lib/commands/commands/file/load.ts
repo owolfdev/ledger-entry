@@ -1,4 +1,5 @@
 import type { Command, CommandContext, CommandResult } from "../../types";
+import { saveLastLoadedFile } from "@/lib/storage";
 
 // Helper function to find journal files
 function findJournalFiles(
@@ -280,6 +281,15 @@ export const loadCommand: Command = {
         )
       );
       context.setCurrentFilePath(filePath);
+
+      // Save to localStorage
+      const fileName = filePath.split("/").pop() || "unknown";
+      saveLastLoadedFile({
+        path: filePath,
+        name: fileName,
+        timestamp: Date.now(),
+      });
+
       context.logger.addLog("success", `Loaded file: ${filePath}`);
       context.updateMessage(`Loaded file: ${filePath}`, "success");
 

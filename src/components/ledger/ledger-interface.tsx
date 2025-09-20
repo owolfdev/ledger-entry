@@ -9,6 +9,12 @@ import { useCommandSystem } from "@/hooks/use-command-system";
 import { useVimMode } from "@/hooks/use-vim-mode";
 import { useKeyboardShortcuts } from "@/hooks/use-keyboard-shortcuts";
 import type { CommandContext, LogMessage } from "@/lib/commands/types";
+import {
+  saveLastLoadedFile,
+  getLastLoadedFile,
+  clearLastLoadedFile,
+} from "@/lib/storage";
+import { findLatestJournalFile } from "@/lib/journal-utils";
 
 // Import extracted components
 import { EditorPanel } from "./editor-panel";
@@ -32,24 +38,7 @@ export default function LedgerInterface() {
   const [commandHistory, setCommandHistory] = useState<string[]>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
   const [logs, setLogs] = useState<LogMessage[]>([]);
-  const [ledgerContent, setLedgerContent] = useState(`; Sample Ledger File
-; This is a comment
-
-2024/01/15 * Grocery Store
-    Expenses:Food:Groceries     $45.67
-    Assets:Checking
-
-2024/01/16 * Salary
-    Assets:Checking            $3000.00
-    Income:Salary
-
-2024/01/17 * Rent Payment
-    Expenses:Housing:Rent       $1200.00
-    Assets:Checking
-
-2024/01/18 * Coffee Shop
-    Expenses:Food:Dining        $12.50
-    Assets:Checking`);
+  const [ledgerContent, setLedgerContent] = useState("");
 
   const [fileName] = useState("main.ledger");
   const [isModified, setIsModified] = useState(false);
@@ -118,6 +107,9 @@ export default function LedgerInterface() {
   // Track if files have been loaded for current repository
   const filesLoadedRef = useRef<string | null>(null);
 
+  // Track if we've attempted to load the default file
+  const defaultFileLoadedRef = useRef(false);
+
   // Add log function (defined early so it can be used in useEffect)
   const addLog = useCallback((type: LogMessage["type"], message: string) => {
     const newLog: LogMessage = {
@@ -154,6 +146,82 @@ export default function LedgerInterface() {
     addLogRef.current = addLog;
     addTimeoutRef.current = addTimeout;
   }, [addLog, addTimeout]);
+
+  // Function to load the default file (latest journal or sample content)
+  const loadDefaultFile = useCallback(async () => {
+    if (defaultFileLoadedRef.current) return;
+    defaultFileLoadedRef.current = true;
+
+    // First, try to load the last loaded file from localStorage
+    const lastLoadedFile = getLastLoadedFile();
+    if (lastLoadedFile && repository) {
+      try {
+        addLog("info", `Restoring last loaded file: ${lastLoadedFile.name}`);
+        await loadFile(lastLoadedFile.path);
+        setCurrentFilePath(lastLoadedFile.path);
+        return;
+      } catch {
+        addLog(
+          "warning",
+          "Failed to restore last loaded file, trying latest journal..."
+        );
+        clearLastLoadedFile();
+      }
+    }
+
+    // If no last loaded file or it failed, try to load the latest journal
+    if (repository && repositoryItems.length > 0) {
+      const latestJournalPath = findLatestJournalFile(repositoryItems);
+      if (latestJournalPath) {
+        try {
+          addLog("info", "Loading latest journal file...");
+          await loadFile(latestJournalPath);
+          setCurrentFilePath(latestJournalPath);
+
+          // Save to localStorage
+          const fileName =
+            latestJournalPath.split("/").pop() || "latest.journal";
+          saveLastLoadedFile({
+            path: latestJournalPath,
+            name: fileName,
+            timestamp: Date.now(),
+          });
+          return;
+        } catch {
+          addLog(
+            "warning",
+            "Failed to load latest journal, using sample content..."
+          );
+        }
+      }
+    }
+
+    // Fallback to sample content if no journal files are available
+    const sampleContent = `; Sample Ledger File
+; This is a comment
+
+2024/01/15 * Grocery Store
+    Expenses:Food:Groceries     $45.67
+    Assets:Checking
+
+2024/01/16 * Salary
+    Assets:Checking            $3000.00
+    Income:Salary
+
+2024/01/17 * Rent Payment
+    Expenses:Housing:Rent       $1200.00
+    Assets:Checking
+
+2024/01/18 * Coffee Shop
+    Expenses:Food:Dining        $12.50
+    Assets:Checking`;
+
+    setLedgerContent(sampleContent);
+    addLog(
+      "info",
+      "Loaded sample ledger content. Use 'load -j latest' to load your latest journal."
+    );
+  }, [repository, repositoryItems, loadFile, addLog]);
 
   const updateMessage = useCallback(
     (text: string, type: "info" | "success" | "warning" | "error" = "info") => {
@@ -249,6 +317,14 @@ export default function LedgerInterface() {
                           )
                         );
                         setCurrentFilePath(fullPath);
+
+                        // Save to localStorage
+                        saveLastLoadedFile({
+                          path: fullPath,
+                          name: fileName,
+                          timestamp: Date.now(),
+                        });
+
                         addLog("success", `Loaded file: ${fullPath}`);
                         updateMessage(`Loaded file: ${fullPath}`, "success");
                       } catch (error) {
@@ -418,6 +494,13 @@ export default function LedgerInterface() {
 
     loadFiles();
   }, [repository]); // Only depend on repository, not addLog
+
+  // Load default file when repository and files are available
+  useEffect(() => {
+    if (repository && repositoryItems.length > 0) {
+      loadDefaultFile();
+    }
+  }, [repository, repositoryItems, loadDefaultFile]);
 
   // Auto-scroll logs to bottom
   useEffect(() => {
