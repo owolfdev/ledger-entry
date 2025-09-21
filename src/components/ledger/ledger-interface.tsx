@@ -77,6 +77,12 @@ export default function LedgerInterface() {
     "info"
   );
 
+  // Confirmation prompt state
+  const [confirmationPrompt, setConfirmationPrompt] = useState<{
+    message: string;
+    resolve: (value: boolean) => void;
+  } | null>(null);
+
   const commandInputRef = useRef<HTMLTextAreaElement>(null);
   const logsEndRef = useRef<HTMLDivElement>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -479,6 +485,16 @@ export default function LedgerInterface() {
     }
   }, [repository]);
 
+  // Function to request user confirmation
+  const requestConfirmation = useCallback(
+    async (message: string): Promise<boolean> => {
+      return new Promise((resolve) => {
+        setConfirmationPrompt({ message, resolve });
+      });
+    },
+    []
+  );
+
   // Load available files when repository is connected
   useEffect(() => {
     const loadFiles = async () => {
@@ -565,6 +581,28 @@ export default function LedgerInterface() {
     };
   }, [cleanupVimMode]);
 
+  // Handle keyboard shortcuts for confirmation prompt
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (!confirmationPrompt) return;
+
+      if (e.key.toLowerCase() === "y" || e.key === "Enter") {
+        confirmationPrompt.resolve(true);
+        setConfirmationPrompt(null);
+        e.preventDefault();
+      } else if (e.key.toLowerCase() === "n" || e.key === "Escape") {
+        confirmationPrompt.resolve(false);
+        setConfirmationPrompt(null);
+        e.preventDefault();
+      }
+    };
+
+    if (confirmationPrompt) {
+      document.addEventListener("keydown", handleKeyDown);
+      return () => document.removeEventListener("keydown", handleKeyDown);
+    }
+  }, [confirmationPrompt]);
+
   // Create command context for the command system
   const commandContext: CommandContext = useMemo(
     () => ({
@@ -605,6 +643,7 @@ export default function LedgerInterface() {
       setCurrentFilePath,
       updateMessage,
       refreshRepositoryItems,
+      requestConfirmation,
     }),
     [
       repository,
@@ -628,6 +667,7 @@ export default function LedgerInterface() {
       setCurrentFilePath,
       updateMessage,
       refreshRepositoryItems,
+      requestConfirmation,
     ]
   );
 
@@ -831,6 +871,40 @@ export default function LedgerInterface() {
           </div>
         )}
       </div>
+
+      {/* Confirmation Prompt Modal */}
+      {confirmationPrompt && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-card border border-border rounded-lg p-6 max-w-md mx-4">
+            <h3 className="text-lg font-semibold mb-4">
+              Confirmation Required
+            </h3>
+            <p className="text-muted-foreground mb-6">
+              {confirmationPrompt.message}
+            </p>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => {
+                  confirmationPrompt.resolve(false);
+                  setConfirmationPrompt(null);
+                }}
+                className="px-4 py-2 text-sm border border-border rounded-md hover:bg-accent"
+              >
+                Cancel (n)
+              </button>
+              <button
+                onClick={() => {
+                  confirmationPrompt.resolve(true);
+                  setConfirmationPrompt(null);
+                }}
+                className="px-4 py-2 text-sm bg-primary text-primary-foreground rounded-md hover:bg-primary/90"
+              >
+                Continue (y)
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

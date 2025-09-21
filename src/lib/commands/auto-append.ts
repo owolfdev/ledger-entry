@@ -61,16 +61,41 @@ export async function autoAppendLedgerEntry(
     };
   }
 
-  // Handle validation warnings (show but allow override)
+  // Handle validation warnings (show and request confirmation)
   if (validation.warnings.length > 0) {
     context.logger.addLog("warning", "⚠️ Validation warnings:");
     validation.warnings.forEach((warning) => {
       context.logger.addLog("warning", `   • ${warning.message}`);
     });
-    context.logger.addLog(
-      "info",
-      "   → Proceeding with transaction (warnings noted)"
-    );
+
+    // Request user confirmation if confirmation system is available
+    if (context.requestConfirmation) {
+      context.logger.addLog("info", "");
+      const confirmed = await context.requestConfirmation(
+        "Do you want to continue with this transaction despite the warnings? (y/n)"
+      );
+
+      if (!confirmed) {
+        context.logger.addLog("info", "❌ Transaction cancelled by user");
+        context.updateMessage("Transaction cancelled", "warning");
+        return {
+          success: false,
+          message: "Transaction cancelled due to warnings",
+          journalFile,
+          created: false,
+        };
+      }
+
+      context.logger.addLog(
+        "success",
+        "✅ Proceeding with transaction (warnings acknowledged)"
+      );
+    } else {
+      context.logger.addLog(
+        "info",
+        "   → Proceeding with transaction (warnings noted)"
+      );
+    }
   }
 
   context.logger.addLog("success", "✅ Validation passed");
