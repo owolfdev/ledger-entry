@@ -56,6 +56,7 @@ export interface CommandContext {
     text: string,
     type: "info" | "success" | "warning" | "error"
   ) => void;
+  refreshRepositoryItems?: () => Promise<void>;
 }
 
 export interface CommandResult {

@@ -21,6 +21,20 @@ export async function autoAppendLedgerEntry(
 ): Promise<AutoAppendResult> {
   const journalFile = `journals/${entry.yearMonth}.journal`;
 
+  // Check if we have repository info
+  if (!context.repository) {
+    const errorMessage =
+      "No repository selected. Please select a repository first.";
+    context.logger.addLog("error", errorMessage);
+    context.updateMessage(errorMessage, "error");
+    return {
+      success: false,
+      message: errorMessage,
+      journalFile,
+      created: false,
+    };
+  }
+
   try {
     // Add loading message
     const loadingLogId = Date.now().toString();
@@ -41,11 +55,26 @@ export async function autoAppendLedgerEntry(
     let fileExists = false;
 
     try {
-      // Try to load the current journal file
-      await context.fileOperations.loadFile(journalFile);
-      currentContent = context.fileOperations.currentFile?.content || "";
-      fileExists = true;
-      context.logger.addLog("info", `   → Loaded existing journal file`);
+      // Try to load the target journal file directly from GitHub
+      const response = await fetch(
+        `/api/github/files?owner=${context.repository.owner}&repo=${
+          context.repository.repo
+        }&path=${encodeURIComponent(journalFile)}`
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        currentContent = data.content || "";
+        fileExists = true;
+        context.logger.addLog("info", `   → Loaded existing journal file`);
+      } else {
+        // File doesn't exist, we'll create it
+        fileExists = false;
+        context.logger.addLog(
+          "info",
+          `   → Journal file doesn't exist, will create new one`
+        );
+      }
     } catch (error) {
       // File doesn't exist, we'll create it
       fileExists = false;
@@ -66,13 +95,37 @@ export async function autoAppendLedgerEntry(
     // Append the new entry
     const newContent = currentContent + entryToAppend;
 
-    // Save the file
+    // Save the file directly to GitHub
     const commitMessage = `entry: ${entry.date} ${entry.description} — ${entry.yearMonth}`;
-    await context.fileOperations.saveFile(newContent, commitMessage);
+    const saveResponse = await fetch("/api/github/files", {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        owner: context.repository.owner,
+        repo: context.repository.repo,
+        path: journalFile,
+        content: newContent,
+        message: commitMessage,
+      }),
+    });
+
+    if (!saveResponse.ok) {
+      throw new Error(`Failed to save file: ${saveResponse.statusText}`);
+    }
 
     // Update main.journal if this is a new file
     if (!fileExists) {
       await updateMainJournal(context, entry.yearMonth, journalFile);
+    }
+
+    // Refresh repository items to show new files
+    await refreshRepositoryItems(context);
+
+    // If the appended file is currently open in editor, refresh its content
+    if (context.fileOperations.currentFile?.path === journalFile) {
+      await refreshCurrentFile(context, journalFile);
     }
 
     // Remove loading message and add success
@@ -133,6 +186,56 @@ function createJournalFileHeader(yearMonth: string): string {
 }
 
 /**
+ * Refresh repository items to show new files
+ */
+async function refreshRepositoryItems(context: CommandContext): Promise<void> {
+  try {
+    context.logger.addLog("info", `   → Refreshing repository file list...`);
+
+    if (context.refreshRepositoryItems) {
+      await context.refreshRepositoryItems();
+      context.logger.addLog("info", `   → Repository file list refreshed`);
+    } else {
+      context.logger.addLog(
+        "warning",
+        `   → Repository refresh callback not available`
+      );
+    }
+  } catch (error) {
+    context.logger.addLog(
+      "warning",
+      `   → Failed to refresh repository items: ${
+        error instanceof Error ? error.message : "Unknown error"
+      }`
+    );
+  }
+}
+
+/**
+ * Refresh the current file content if it matches the appended file
+ */
+async function refreshCurrentFile(
+  context: CommandContext,
+  journalFile: string
+): Promise<void> {
+  try {
+    context.logger.addLog("info", `   → Refreshing editor content...`);
+
+    // Reload the file content
+    await context.fileOperations.loadFile(journalFile);
+
+    context.logger.addLog("info", `   → Editor content refreshed`);
+  } catch (error) {
+    context.logger.addLog(
+      "warning",
+      `   → Failed to refresh editor content: ${
+        error instanceof Error ? error.message : "Unknown error"
+      }`
+    );
+  }
+}
+
+/**
  * Update main.journal to include a new monthly journal file
  */
 async function updateMainJournal(
@@ -146,9 +249,16 @@ async function updateMainJournal(
       `   → Updating main.journal to include ${journalFile}`
     );
 
-    // Load main.journal
-    await context.fileOperations.loadFile("main.journal");
-    let mainContent = context.fileOperations.currentFile?.content || "";
+    // Load main.journal directly from GitHub
+    const mainResponse = await fetch(
+      `/api/github/files?owner=${context.repository.owner}&repo=${context.repository.repo}&path=main.journal`
+    );
+
+    let mainContent = "";
+    if (mainResponse.ok) {
+      const mainData = await mainResponse.json();
+      mainContent = mainData.content || "";
+    }
 
     // Check if the include already exists
     const includeLine = `!include ${journalFile}`;
@@ -176,11 +286,26 @@ async function updateMainJournal(
     lines.splice(insertIndex, 0, includeLine);
     const newMainContent = lines.join("\n");
 
-    // Save the updated main.journal
-    await context.fileOperations.saveFile(
-      newMainContent,
-      `main: add ${journalFile} to includes`
-    );
+    // Save the updated main.journal directly to GitHub
+    const mainSaveResponse = await fetch("/api/github/files", {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        owner: context.repository.owner,
+        repo: context.repository.repo,
+        path: "main.journal",
+        content: newMainContent,
+        message: `main: add ${journalFile} to includes`,
+      }),
+    });
+
+    if (!mainSaveResponse.ok) {
+      throw new Error(
+        `Failed to update main.journal: ${mainSaveResponse.statusText}`
+      );
+    }
 
     context.logger.addLog(
       "success",

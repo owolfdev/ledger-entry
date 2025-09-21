@@ -460,6 +460,25 @@ export default function LedgerInterface() {
     loadRepository();
   }, []); // Empty dependency array to run only once
 
+  // Function to refresh repository items
+  const refreshRepositoryItems = useCallback(async () => {
+    if (!repository) return;
+
+    try {
+      const response = await fetch(
+        `/api/github/files?owner=${repository.owner}&repo=${repository.repo}`
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        const items = data.files || [];
+        setRepositoryItems(items);
+      }
+    } catch (error) {
+      console.error("Failed to refresh repository items:", error);
+    }
+  }, [repository]);
+
   // Load available files when repository is connected
   useEffect(() => {
     const loadFiles = async () => {
@@ -585,6 +604,7 @@ export default function LedgerInterface() {
       repositoryItems,
       setCurrentFilePath,
       updateMessage,
+      refreshRepositoryItems,
     }),
     [
       repository,
@@ -607,6 +627,7 @@ export default function LedgerInterface() {
       repositoryItems,
       setCurrentFilePath,
       updateMessage,
+      refreshRepositoryItems,
     ]
   );
 
