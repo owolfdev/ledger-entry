@@ -193,6 +193,15 @@ export const loadCommand: Command = {
         /^\d{4}-\d{1,2}$/,
       ];
 
+      // Check for common invalid patterns that users might try
+      if (journalArg.endsWith(".journal")) {
+        return {
+          valid: false,
+          error:
+            "Don't include '.journal' extension. Use: load -j 2025-09 (not 2025-09.journal)",
+        };
+      }
+
       if (
         monthFromName === null &&
         !validPatterns.some((pattern) =>
@@ -227,10 +236,27 @@ export const loadCommand: Command = {
       );
 
       if (!resolvedPath) {
+        // Get available journal files for better error message
+        const journalFiles = findJournalFiles(context.repositoryItems);
+        const availableFiles = journalFiles
+          .map((f) => f.name.replace(".journal", ""))
+          .join(", ");
+
         context.logger.addLog(
           "error",
           `No journal file found for: ${journalCriteria}`
         );
+        if (availableFiles) {
+          context.logger.addLog(
+            "info",
+            `Available journal files: ${availableFiles}`
+          );
+        } else {
+          context.logger.addLog(
+            "info",
+            "No journal files found in /journals folder"
+          );
+        }
         context.updateMessage(
           `No journal file found for: ${journalCriteria}`,
           "error"
@@ -246,6 +272,24 @@ export const loadCommand: Command = {
     } else {
       filePath = args.join(" ");
       displayPath = filePath;
+
+      // Check if the file exists in repository items
+      const fileExists = context.repositoryItems.some(
+        (item) => item.path === filePath && item.type === "file"
+      );
+
+      if (!fileExists) {
+        context.logger.addLog("error", `File not found: ${filePath}`);
+        context.logger.addLog(
+          "info",
+          "Use 'files' command to see available files"
+        );
+        context.updateMessage(`File not found: ${filePath}`, "error");
+        return {
+          success: false,
+          message: `File not found: ${filePath}`,
+        };
+      }
     }
 
     // Add loading message
