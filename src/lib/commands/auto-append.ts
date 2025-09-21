@@ -2,9 +2,9 @@
  * Auto-append logic for ledger entries
  */
 
-import type { CommandContext, CommandResult } from "./types";
+import type { CommandContext } from "./types";
 import type { ParsedLedgerEntry } from "./intent-detector";
-import { validateLedgerEntry, type ValidationResult } from "./ledger-validator";
+import { validateLedgerEntry } from "./ledger-validator";
 
 export interface AutoAppendResult {
   success: boolean;
@@ -115,7 +115,7 @@ export async function autoAppendLedgerEntry(
           `   → Journal file doesn't exist, will create new one`
         );
       }
-    } catch (error) {
+    } catch {
       // File doesn't exist, we'll create it
       fileExists = false;
       context.logger.addLog(
