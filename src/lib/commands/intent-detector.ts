@@ -47,7 +47,8 @@ function parseLedgerEntry(input: string): ParsedLedgerEntry | null {
   const firstLine = lines[0].trim();
 
   // Check if first line starts with a date (YYYY/MM/DD or YYYY-MM-DD format)
-  const dateMatch = firstLine.match(/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})/);
+  // Must be zero-padded: YYYY/MM/DD (e.g., 2025/02/15, not 2025/2/15)
+  const dateMatch = firstLine.match(/^(\d{4})[\/\-](\d{2})[\/\-](\d{2})/);
   if (!dateMatch) return null;
 
   const [, year, month, day] = dateMatch;

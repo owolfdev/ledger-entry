@@ -4,6 +4,7 @@
 
 import type { CommandContext, CommandResult } from "./types";
 import type { ParsedLedgerEntry } from "./intent-detector";
+import { validateLedgerEntry, type ValidationResult } from "./ledger-validator";
 
 export interface AutoAppendResult {
   success: boolean;
@@ -34,6 +35,45 @@ export async function autoAppendLedgerEntry(
       created: false,
     };
   }
+
+  // Validate the ledger entry
+  context.logger.addLog("info", "🔍 Validating ledger entry...");
+  const validation = validateLedgerEntry(entry);
+
+  // Handle validation errors (block the transaction)
+  if (!validation.isValid) {
+    context.logger.addLog("error", "❌ Validation failed:");
+    validation.errors.forEach((error) => {
+      context.logger.addLog("error", `   • ${error.message}`);
+      if (error.suggestion) {
+        context.logger.addLog("info", `     💡 ${error.suggestion}`);
+      }
+    });
+
+    const errorMessage =
+      "Transaction validation failed. Please fix the errors above.";
+    context.updateMessage(errorMessage, "error");
+    return {
+      success: false,
+      message: errorMessage,
+      journalFile,
+      created: false,
+    };
+  }
+
+  // Handle validation warnings (show but allow override)
+  if (validation.warnings.length > 0) {
+    context.logger.addLog("warning", "⚠️ Validation warnings:");
+    validation.warnings.forEach((warning) => {
+      context.logger.addLog("warning", `   • ${warning.message}`);
+    });
+    context.logger.addLog(
+      "info",
+      "   → Proceeding with transaction (warnings noted)"
+    );
+  }
+
+  context.logger.addLog("success", "✅ Validation passed");
 
   try {
     // Add loading message

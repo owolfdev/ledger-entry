@@ -76,6 +76,24 @@ export const helpCommand: Command = {
       "info",
       "  Transactions are automatically saved to journals/YYYY-MM.journal"
     );
+    context.logger.addLog(
+      "info",
+      "  Note: Use zero-padded dates (2025/09/15, not 2025/9/15)"
+    );
+    context.logger.addLog("info", "");
+    context.logger.addLog("info", "🔍 Validation Features:");
+    context.logger.addLog(
+      "info",
+      "  • Date validation (zero-padded YYYY/MM/DD format required)"
+    );
+    context.logger.addLog(
+      "info",
+      "  • Balance checking (debits must equal credits)"
+    );
+    context.logger.addLog(
+      "info",
+      "  • Date range warnings (outside current year ±2)"
+    );
     context.logger.addLog("info", "");
     context.logger.addLog("info", "🔧 Utility Commands:");
     context.logger.addLog(
