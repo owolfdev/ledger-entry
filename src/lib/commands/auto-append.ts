@@ -283,6 +283,16 @@ async function updateMainJournal(
   yearMonth: string,
   journalFile: string
 ): Promise<void> {
+  // This function is only called when context.repository is not null
+  // (checked in the calling function), so we can safely use non-null assertion
+  if (!context.repository) {
+    context.logger.addLog(
+      "error",
+      "   → No repository available for main.journal update"
+    );
+    return;
+  }
+
   try {
     context.logger.addLog(
       "info",
