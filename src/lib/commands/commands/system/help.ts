@@ -64,6 +64,19 @@ export const helpCommand: Command = {
       "  add transaction  - Add transaction template"
     );
     context.logger.addLog("info", "");
+    context.logger.addLog("info", "📝 Direct Transaction Entry:");
+    context.logger.addLog(
+      "info",
+      "  You can also type ledger transactions directly:"
+    );
+    context.logger.addLog("info", "  2025/09/15 Example Transaction");
+    context.logger.addLog("info", "      Personal:Expenses:Food    10.00 USD");
+    context.logger.addLog("info", "      Personal:Assets:Bank     -10.00 USD");
+    context.logger.addLog(
+      "info",
+      "  Transactions are automatically saved to journals/YYYY-MM.journal"
+    );
+    context.logger.addLog("info", "");
     context.logger.addLog("info", "🔧 Utility Commands:");
     context.logger.addLog(
       "info",
@@ -77,7 +90,7 @@ export const helpCommand: Command = {
     context.logger.addLog("info", "");
     context.logger.addLog(
       "success",
-      "💡 Try 'files' to see repository structure, 'journals' for journal files, or 'load -j current' for quick journal loading"
+      "💡 Try 'files' to see repository structure, 'journals' for journal files, or type a ledger transaction directly!"
     );
 
     context.updateMessage(
