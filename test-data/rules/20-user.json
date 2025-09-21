@@ -1,0 +1,49 @@
+{
+  "version": "1.0",
+  "defaults": {
+    "entity": "Personal",
+    "currency": "THB",
+    "fallbackCredit": "Personal:Assets:Bank:KBank:Checking"
+  },
+  "items": [
+    {
+      "pattern": "(?i)bubble tea|boba|ชานม|ชาไข่มุก",
+      "debit": "Personal:Expenses:Food:Coffee",
+      "priority": 15
+    },
+    {
+      "pattern": "(?i)massage|spa|นวด|สปา|นวดไทย",
+      "debit": "Personal:Expenses:Health:Doctor",
+      "priority": 15
+    },
+    {
+      "pattern": "(?i)cinema|movie|หนัง|ดูหนัง",
+      "debit": "Personal:Expenses:Entertainment:Movies",
+      "priority": 15
+    }
+  ],
+  "merchants": [
+    {
+      "pattern": "(?i)chatime|gong cha|koi|ชาติเมย์|กงชา|คอย",
+      "defaultDebit": "Personal:Expenses:Food:Coffee"
+    },
+    {
+      "pattern": "(?i)health land|let's relax|healthland|เล็ทส์รีแลกซ์",
+      "defaultDebit": "Personal:Expenses:Health:Doctor"
+    },
+    {
+      "pattern": "(?i)terminal 21|siam paragon|central world|เทอร์มินอล|สยามพารากอน|เซ็นทรัลเวิลด์",
+      "defaultDebit": "Personal:Expenses:Shopping:Clothes"
+    }
+  ],
+  "payments": [
+    {
+      "pattern": "(?i)promptpay|พร้อมเพย์|qr|คิวอาร์",
+      "credit": "Personal:Assets:Bank:KBank:Checking"
+    },
+    {
+      "pattern": "(?i)true wallet|ทรูวอลเล็ต",
+      "credit": "Personal:Assets:Cash"
+    }
+  ]
+}

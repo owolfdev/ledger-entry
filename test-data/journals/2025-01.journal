@@ -1,0 +1,33 @@
+; Ledger Entry — transactions for 2025-01
+; Generated on 2025-01-15
+
+2025/01/15 Starbucks Coffee
+    Personal:Expenses:Food:Coffee           120.00 THB
+    Personal:Assets:Bank:KBank:Checking    -120.00 THB
+    ; morning coffee before work
+
+2025/01/15 Grab Ride to Office
+    Personal:Expenses:Transport:Taxi         85.00 THB
+    Personal:Assets:Bank:KBank:Checking     -85.00 THB
+    ; taxi to work
+
+2025/01/15 Lunch at McDonald's
+    Personal:Expenses:Food:Restaurant       180.00 THB
+    Personal:Liabilities:CreditCard:Visa    -180.00 THB
+    ; lunch with colleagues
+
+2025/01/15 BTS Ticket
+    Personal:Expenses:Transport:BTS          45.00 THB
+    Personal:Assets:Cash                    -45.00 THB
+    ; skytrain home
+
+2025/01/15 7-Eleven Snacks
+    Personal:Expenses:Food:Snacks            65.00 THB
+    Personal:Assets:Cash                    -65.00 THB
+    ; evening snacks
+
+; Sample business transaction
+2025/01/15 Biz1 - Office Supplies
+    Biz1:Expenses:Office:Supplies           250.00 THB
+    Biz1:Liabilities:CreditCard:Business    -250.00 THB
+    ; office supplies purchase

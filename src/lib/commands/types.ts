@@ -56,6 +56,7 @@ export interface CommandContext {
     text: string,
     type: "info" | "success" | "warning" | "error"
   ) => void;
+  setCommand?: (command: string) => void;
   refreshRepositoryItems?: () => Promise<void>;
   requestConfirmation?: (message: string) => Promise<boolean>;
 }
@@ -63,6 +64,7 @@ export interface CommandContext {
 export interface CommandResult {
   success: boolean;
   message?: string;
+  details?: string;
   data?: unknown;
   logs?: LogMessage[];
 }
@@ -77,6 +79,7 @@ export interface Command {
   aliases?: string[];
   description: string;
   usage?: string;
+  examples?: string[];
   execute: (args: string[], context: CommandContext) => Promise<CommandResult>;
   validate?: (args: string[]) => ValidationResult;
 }

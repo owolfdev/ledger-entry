@@ -1,0 +1,11 @@
+{
+  "version": "1.0",
+  "defaults": {
+    "entity": "Personal",
+    "currency": "THB",
+    "fallbackCredit": "Personal:Assets:Bank:KBank:Checking"
+  },
+  "items": [],
+  "merchants": [],
+  "payments": []
+}

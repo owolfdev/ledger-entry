@@ -1,0 +1,139 @@
+; Chart of Accounts - Enhanced Test Data
+; Generated for testing natural language parser
+
+; Personal Assets
+account Personal:Assets:Bank:KBank:Checking
+account Personal:Assets:Bank:KBank:Savings
+account Personal:Assets:Bank:SCB:Checking
+account Personal:Assets:Bank:SCB:Savings
+account Personal:Assets:Bank:Bangkok:Checking
+account Personal:Assets:Bank:Bangkok:Savings
+account Personal:Assets:Cash
+account Personal:Assets:Investments:Stocks
+account Personal:Assets:Investments:Crypto
+
+; Personal Liabilities
+account Personal:Liabilities:CreditCard:Visa
+account Personal:Liabilities:CreditCard:Mastercard
+account Personal:Liabilities:Loans:Car
+account Personal:Liabilities:Loans:Personal
+
+; Personal Income
+account Personal:Income:Salary
+account Personal:Income:Freelance
+account Personal:Income:Investment:Interest
+account Personal:Income:Investment:Dividends
+
+; Personal Expenses - Food
+account Personal:Expenses:Food:Coffee
+account Personal:Expenses:Food:Restaurant
+account Personal:Expenses:Food:Groceries
+account Personal:Expenses:Food:Snacks
+account Personal:Expenses:Food:Delivery
+
+; Personal Expenses - Transport
+account Personal:Expenses:Transport:Taxi
+account Personal:Expenses:Transport:BTS
+account Personal:Expenses:Transport:MRT
+account Personal:Expenses:Transport:Bus
+account Personal:Expenses:Transport:Gas
+account Personal:Expenses:Transport:Parking
+
+; Personal Expenses - Utilities
+account Personal:Expenses:Utilities:Electricity
+account Personal:Expenses:Utilities:Water
+account Personal:Expenses:Utilities:Internet
+account Personal:Expenses:Utilities:Phone
+account Personal:Expenses:Utilities:Rent
+
+; Personal Expenses - Health
+account Personal:Expenses:Health:Doctor
+account Personal:Expenses:Health:Medicine
+account Personal:Expenses:Health:Gym
+account Personal:Expenses:Health:Insurance
+
+; Personal Expenses - Shopping
+account Personal:Expenses:Shopping:Clothes
+account Personal:Expenses:Shopping:Electronics
+account Personal:Expenses:Shopping:Books
+account Personal:Expenses:Shopping:Home
+
+; Personal Expenses - Entertainment
+account Personal:Expenses:Entertainment:Movies
+account Personal:Expenses:Entertainment:Games
+account Personal:Expenses:Entertainment:Streaming
+account Personal:Expenses:Entertainment:Travel
+
+; Business Accounts (for testing multi-entity)
+account Biz1:Assets:Bank:Bangkok:Business
+account Biz1:Assets:Equipment:Computer
+account Biz1:Liabilities:CreditCard:Business
+account Biz1:Income:Sales:Products
+account Biz1:Income:Sales:Services
+account Biz1:Expenses:Marketing:Ads
+account Biz1:Expenses:Office:Rent
+account Biz1:Expenses:Office:Supplies
+
+; Account aliases for easier reference
+alias kbank = Personal:Assets:Bank:KBank:Checking
+alias kbanksavings = Personal:Assets:Bank:KBank:Savings
+alias scb = Personal:Assets:Bank:SCB:Checking
+alias scbsavings = Personal:Assets:Bank:SCB:Savings
+alias bbl = Personal:Assets:Bank:Bangkok:Checking
+alias bblsavings = Personal:Assets:Bank:Bangkok:Savings
+alias cash = Personal:Assets:Cash
+alias visa = Personal:Liabilities:CreditCard:Visa
+alias mastercard = Personal:Liabilities:CreditCard:Mastercard
+alias credit = Personal:Liabilities:CreditCard:Visa
+
+; Food aliases
+alias coffee = Personal:Expenses:Food:Coffee
+alias restaurant = Personal:Expenses:Food:Restaurant
+alias groceries = Personal:Expenses:Food:Groceries
+alias food = Personal:Expenses:Food:Restaurant
+alias lunch = Personal:Expenses:Food:Restaurant
+alias dinner = Personal:Expenses:Food:Restaurant
+
+; Transport aliases
+alias taxi = Personal:Expenses:Transport:Taxi
+alias grab = Personal:Expenses:Transport:Taxi
+alias bts = Personal:Expenses:Transport:BTS
+alias skytrain = Personal:Expenses:Transport:BTS
+alias mrt = Personal:Expenses:Transport:MRT
+alias bus = Personal:Expenses:Transport:Bus
+alias gas = Personal:Expenses:Transport:Gas
+alias fuel = Personal:Expenses:Transport:Gas
+alias parking = Personal:Expenses:Transport:Parking
+
+; Utility aliases
+alias electricity = Personal:Expenses:Utilities:Electricity
+alias water = Personal:Expenses:Utilities:Water
+alias internet = Personal:Expenses:Utilities:Internet
+alias wifi = Personal:Expenses:Utilities:Internet
+alias phone = Personal:Expenses:Utilities:Phone
+alias rent = Personal:Expenses:Utilities:Rent
+
+; Health aliases
+alias doctor = Personal:Expenses:Health:Doctor
+alias medicine = Personal:Expenses:Health:Medicine
+alias gym = Personal:Expenses:Health:Gym
+alias insurance = Personal:Expenses:Health:Insurance
+
+; Shopping aliases
+alias clothes = Personal:Expenses:Shopping:Clothes
+alias electronics = Personal:Expenses:Shopping:Electronics
+alias books = Personal:Expenses:Shopping:Books
+alias home = Personal:Expenses:Shopping:Home
+
+; Entertainment aliases
+alias movies = Personal:Expenses:Entertainment:Movies
+alias games = Personal:Expenses:Entertainment:Games
+alias streaming = Personal:Expenses:Entertainment:Streaming
+alias travel = Personal:Expenses:Entertainment:Travel
+
+; Business aliases
+alias bizbank = Biz1:Assets:Bank:Bangkok:Business
+alias bizcard = Biz1:Liabilities:CreditCard:Business
+alias sales = Biz1:Income:Sales:Products
+alias marketing = Biz1:Expenses:Marketing:Ads
+alias office = Biz1:Expenses:Office:Rent

@@ -1,0 +1,29 @@
+{
+  "version": "1.0",
+  "defaults": {},
+  "items": [
+    {
+      "pattern": "(?i)iced coffee|กาแฟเย็น",
+      "debit": "Personal:Expenses:Food:Coffee",
+      "priority": 20,
+      "learned": true,
+      "confidence": 0.8
+    },
+    {
+      "pattern": "(?i)breakfast|เช้า|อาหารเช้า",
+      "debit": "Personal:Expenses:Food:Restaurant",
+      "priority": 20,
+      "learned": true,
+      "confidence": 0.7
+    }
+  ],
+  "merchants": [
+    {
+      "pattern": "(?i)local cafe|ร้านกาแฟเล็ก|ร้านเล็ก",
+      "defaultDebit": "Personal:Expenses:Food:Coffee",
+      "learned": true,
+      "confidence": 0.6
+    }
+  ],
+  "payments": []
+}

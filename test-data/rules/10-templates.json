@@ -1,0 +1,259 @@
+{
+  "version": "1.0",
+  "template": "th-thb",
+  "defaults": {
+    "entity": "Personal",
+    "currency": "THB",
+    "fallbackCredit": "Personal:Assets:Bank:KBank:Checking"
+  },
+  "items": [
+    {
+      "pattern": "(?i)coffee|latte|cappuccino|americano|กาแฟ|คาปูชิโน่",
+      "debit": "Personal:Expenses:Food:Coffee",
+      "priority": 10
+    },
+    {
+      "pattern": "(?i)restaurant|food|meal|lunch|dinner|อาหาร|ร้านอาหาร|ข้าว|อาหารกลางวัน|อาหารเย็น",
+      "debit": "Personal:Expenses:Food:Restaurant",
+      "priority": 10
+    },
+    {
+      "pattern": "(?i)groceries|grocery|supermarket|market|ของชำ|ซุปเปอร์มาร์เก็ต|ตลาด",
+      "debit": "Personal:Expenses:Food:Groceries",
+      "priority": 10
+    },
+    {
+      "pattern": "(?i)snacks|snack|ขนม|ของกินเล่น",
+      "debit": "Personal:Expenses:Food:Snacks",
+      "priority": 10
+    },
+    {
+      "pattern": "(?i)delivery|grab|foodpanda|lineman|เดลิเวอรี่|ส่งอาหาร",
+      "debit": "Personal:Expenses:Food:Delivery",
+      "priority": 10
+    },
+    {
+      "pattern": "(?i)taxi|grab|bolt|ride|แท็กซี่|รถแท็กซี่",
+      "debit": "Personal:Expenses:Transport:Taxi",
+      "priority": 10
+    },
+    {
+      "pattern": "(?i)bts|skytrain|รถไฟฟ้า|รถไฟฟ้าบีทีเอส",
+      "debit": "Personal:Expenses:Transport:BTS",
+      "priority": 10
+    },
+    {
+      "pattern": "(?i)mrt|subway|รถไฟฟ้าใต้ดิน|รถไฟใต้ดิน",
+      "debit": "Personal:Expenses:Transport:MRT",
+      "priority": 10
+    },
+    {
+      "pattern": "(?i)bus|รถบัส|รถเมล์",
+      "debit": "Personal:Expenses:Transport:Bus",
+      "priority": 10
+    },
+    {
+      "pattern": "(?i)gas|fuel|gasoline|น้ำมัน|เชื้อเพลิง|น้ำมันรถ",
+      "debit": "Personal:Expenses:Transport:Gas",
+      "priority": 10
+    },
+    {
+      "pattern": "(?i)parking|ที่จอดรถ|ค่าจอดรถ",
+      "debit": "Personal:Expenses:Transport:Parking",
+      "priority": 10
+    },
+    {
+      "pattern": "(?i)electricity|electric|power|ไฟ|ค่าไฟ|ไฟฟ้า",
+      "debit": "Personal:Expenses:Utilities:Electricity",
+      "priority": 10
+    },
+    {
+      "pattern": "(?i)water|น้ำ|ค่าน้ำ",
+      "debit": "Personal:Expenses:Utilities:Water",
+      "priority": 10
+    },
+    {
+      "pattern": "(?i)internet|wifi|broadband|อินเทอร์เน็ต|ไวไฟ",
+      "debit": "Personal:Expenses:Utilities:Internet",
+      "priority": 10
+    },
+    {
+      "pattern": "(?i)phone|mobile|มือถือ|โทรศัพท์|ค่าโทร",
+      "debit": "Personal:Expenses:Utilities:Phone",
+      "priority": 10
+    },
+    {
+      "pattern": "(?i)rent|apartment|condo|บ้าน|คอนโด|ค่าเช่า",
+      "debit": "Personal:Expenses:Utilities:Rent",
+      "priority": 10
+    },
+    {
+      "pattern": "(?i)doctor|hospital|clinic|หมอ|โรงพยาบาล|คลินิก",
+      "debit": "Personal:Expenses:Health:Doctor",
+      "priority": 10
+    },
+    {
+      "pattern": "(?i)medicine|pharmacy|drug|ยา|ร้านยา|ยาสมุนไพร",
+      "debit": "Personal:Expenses:Health:Medicine",
+      "priority": 10
+    },
+    {
+      "pattern": "(?i)gym|fitness|workout|ฟิตเนส|ออกกำลังกาย|ยิม",
+      "debit": "Personal:Expenses:Health:Gym",
+      "priority": 10
+    },
+    {
+      "pattern": "(?i)insurance|ประกัน|ประกันชีวิต|ประกันสุขภาพ",
+      "debit": "Personal:Expenses:Health:Insurance",
+      "priority": 10
+    },
+    {
+      "pattern": "(?i)clothes|clothing|shirt|pants|เสื้อ|กางเกง|เสื้อผ้า",
+      "debit": "Personal:Expenses:Shopping:Clothes",
+      "priority": 10
+    },
+    {
+      "pattern": "(?i)electronics|phone|laptop|computer|มือถือ|คอมพิวเตอร์|โน๊ตบุ๊ค",
+      "debit": "Personal:Expenses:Shopping:Electronics",
+      "priority": 10
+    },
+    {
+      "pattern": "(?i)books|book|หนังสือ|นิตยสาร|แมกกาซีน",
+      "debit": "Personal:Expenses:Shopping:Books",
+      "priority": 10
+    },
+    {
+      "pattern": "(?i)home|furniture|decoration|บ้าน|เฟอร์นิเจอร์|ตกแต่ง",
+      "debit": "Personal:Expenses:Shopping:Home",
+      "priority": 10
+    },
+    {
+      "pattern": "(?i)movies|cinema|theater|หนัง|โรงหนัง|โรงภาพยนตร์",
+      "debit": "Personal:Expenses:Entertainment:Movies",
+      "priority": 10
+    },
+    {
+      "pattern": "(?i)games|gaming|เกม|เล่นเกม",
+      "debit": "Personal:Expenses:Entertainment:Games",
+      "priority": 10
+    },
+    {
+      "pattern": "(?i)streaming|netflix|youtube|spotify|สตรีมมิ่ง|เน็ตฟลิกซ์",
+      "debit": "Personal:Expenses:Entertainment:Streaming",
+      "priority": 10
+    },
+    {
+      "pattern": "(?i)travel|trip|vacation|holiday|ท่องเที่ยว|เที่ยว|พักผ่อน",
+      "debit": "Personal:Expenses:Entertainment:Travel",
+      "priority": 10
+    }
+  ],
+  "merchants": [
+    {
+      "pattern": "(?i)starbucks|sbux|สตาร์บัคส์",
+      "defaultDebit": "Personal:Expenses:Food:Coffee"
+    },
+    {
+      "pattern": "(?i)mcdonalds|mcd|แมคโดนัลด์|แมค",
+      "defaultDebit": "Personal:Expenses:Food:Restaurant"
+    },
+    {
+      "pattern": "(?i)kfc|เคเอฟซี",
+      "defaultDebit": "Personal:Expenses:Food:Restaurant"
+    },
+    {
+      "pattern": "(?i)pizza hut|พิซซ่าฮัท",
+      "defaultDebit": "Personal:Expenses:Food:Restaurant"
+    },
+    {
+      "pattern": "(?i)7-eleven|7eleven|seven|เซเว่น|7-11",
+      "defaultDebit": "Personal:Expenses:Food:Snacks"
+    },
+    {
+      "pattern": "(?i)family mart|ฟามิลี่มาร์ท",
+      "defaultDebit": "Personal:Expenses:Food:Snacks"
+    },
+    {
+      "pattern": "(?i)big c|บิ๊กซี",
+      "defaultDebit": "Personal:Expenses:Food:Groceries"
+    },
+    {
+      "pattern": "(?i)tesco|เทสโก้",
+      "defaultDebit": "Personal:Expenses:Food:Groceries"
+    },
+    {
+      "pattern": "(?i)grab|bolt|gojek|แกร็บ|โบลต์|โกเจ็ก",
+      "defaultDebit": "Personal:Expenses:Transport:Taxi"
+    },
+    {
+      "pattern": "(?i)foodpanda|lineman|ฟู้ดแพนด้า|ไลน์แมน",
+      "defaultDebit": "Personal:Expenses:Food:Delivery"
+    },
+    {
+      "pattern": "(?i)shell|esso|ptt|เชลล์|เอสโซ่|ปตท",
+      "defaultDebit": "Personal:Expenses:Transport:Gas"
+    },
+    {
+      "pattern": "(?i)true|dtac|ais|ทรู|ดีแทค|เอไอเอส",
+      "defaultDebit": "Personal:Expenses:Utilities:Phone"
+    },
+    {
+      "pattern": "(?i)3bb|tot|3บีบี|ทีโอที",
+      "defaultDebit": "Personal:Expenses:Utilities:Internet"
+    },
+    {
+      "pattern": "(?i)central|centara|เซ็นทรัล|เซ็นทารา",
+      "defaultDebit": "Personal:Expenses:Shopping:Clothes"
+    },
+    {
+      "pattern": "(?i)power buy|big camera|พาวเวอร์บาย|บิ๊กคาเมร่า",
+      "defaultDebit": "Personal:Expenses:Shopping:Electronics"
+    },
+    {
+      "pattern": "(?i)kinokuniya|se-ed|คิโนะคุนิยะ|ซีเอ็ด",
+      "defaultDebit": "Personal:Expenses:Shopping:Books"
+    },
+    {
+      "pattern": "(?i)ikea|index|ไอเกีย|อินเด็กซ์",
+      "defaultDebit": "Personal:Expenses:Shopping:Home"
+    },
+    {
+      "pattern": "(?i)major|sf|เมเจอร์|เอสเอฟ",
+      "defaultDebit": "Personal:Expenses:Entertainment:Movies"
+    },
+    {
+      "pattern": "(?i)netflix|youtube|spotify|apple music|เน็ตฟลิกซ์|ยูทูบ|สปอติฟาย",
+      "defaultDebit": "Personal:Expenses:Entertainment:Streaming"
+    }
+  ],
+  "payments": [
+    {
+      "pattern": "(?i)kbank|kasikorn|กสิกร|กสิกรไทย",
+      "credit": "Personal:Assets:Bank:KBank:Checking"
+    },
+    {
+      "pattern": "(?i)scb|siam|ไทยพาณิชย์|ธนาคารไทยพาณิชย์",
+      "credit": "Personal:Assets:Bank:SCB:Checking"
+    },
+    {
+      "pattern": "(?i)bangkok|bbl|กรุงเทพ|ธนาคารกรุงเทพ",
+      "credit": "Personal:Assets:Bank:Bangkok:Checking"
+    },
+    {
+      "pattern": "(?i)cash|เงินสด|เงินทอน",
+      "credit": "Personal:Assets:Cash"
+    },
+    {
+      "pattern": "(?i)visa|วีซ่า|บัตรวีซ่า",
+      "credit": "Personal:Liabilities:CreditCard:Visa"
+    },
+    {
+      "pattern": "(?i)mastercard|มาสเตอร์การ์ด|บัตรมาสเตอร์การ์ด",
+      "credit": "Personal:Liabilities:CreditCard:Mastercard"
+    },
+    {
+      "pattern": "(?i)credit|บัตรเครดิต|เครดิต",
+      "credit": "Personal:Liabilities:CreditCard:Visa"
+    }
+  ]
+}

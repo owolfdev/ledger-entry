@@ -603,6 +603,26 @@ export default function LedgerInterface() {
     }
   }, [confirmationPrompt]);
 
+  // Enhanced setCommand that also handles auto-resize and focus
+  const setCommandWithResize = useCallback((newCommand: string) => {
+    setCommand(newCommand);
+    // Focus the textarea after setting the command
+    setTimeout(() => {
+      if (commandInputRef.current) {
+        commandInputRef.current.focus();
+      }
+    }, 0);
+  }, []);
+
+  // Auto-resize textarea when command changes
+  useEffect(() => {
+    if (commandInputRef.current) {
+      const textarea = commandInputRef.current;
+      textarea.style.height = "auto";
+      textarea.style.height = `${textarea.scrollHeight}px`;
+    }
+  }, [command]);
+
   // Create command context for the command system
   const commandContext: CommandContext = useMemo(
     () => ({
@@ -642,6 +662,7 @@ export default function LedgerInterface() {
       repositoryItems,
       setCurrentFilePath,
       updateMessage,
+      setCommand: setCommandWithResize,
       refreshRepositoryItems,
       requestConfirmation,
     }),
@@ -666,6 +687,7 @@ export default function LedgerInterface() {
       repositoryItems,
       setCurrentFilePath,
       updateMessage,
+      setCommandWithResize,
       refreshRepositoryItems,
       requestConfirmation,
     ]
@@ -684,13 +706,19 @@ export default function LedgerInterface() {
       setCommandHistory((prev) => [...prev, cmd]);
       setHistoryIndex(-1);
 
+      // Check if this is an add command that should populate the input
+      const isAddCommand = cmd.trim().toLowerCase().startsWith("add ");
+
       // Execute using new command system
       await executeCommandNew(cmd);
 
-      setCommand("");
-      if (commandInputRef.current) {
-        commandInputRef.current.style.height = "auto";
-        commandInputRef.current.focus();
+      // Only clear the command if it's not an add command
+      if (!isAddCommand) {
+        setCommand("");
+        if (commandInputRef.current) {
+          commandInputRef.current.style.height = "auto";
+          commandInputRef.current.focus();
+        }
       }
     },
     [executeCommandNew]

@@ -1,0 +1,6 @@
+; Ledger Entry — main journal file
+; This file includes all other journal files
+; Generated on 2025-01-15
+
+!include accounts.journal
+!include journals/2025-01.journal
