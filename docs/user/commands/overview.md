@@ -29,6 +29,9 @@ Commands for navigating and managing your ledger files:
 
 Commands for adding and managing transactions:
 
+// Natural language transaction entry
+
+- `add` - Add a transaction using natural language (items, merchant, payment, date, memo)
 - `add transaction` - Add transaction template
 
 ### 🔧 Utility Commands

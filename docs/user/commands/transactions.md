@@ -4,6 +4,49 @@ Commands for adding and managing transactions in your ledger.
 
 ## Available Commands
 
+### `add` (natural language)
+
+Create a transaction by describing it in plain English. The app parses your input, applies your rules, and prepares a balanced Ledger entry for you to review and save.
+
+#### Syntax
+
+```bash
+add <item> <amount> [currency] [, <item> <amount>] [@|at <merchant>] [with <payment>] [for <entity>] [on <date>] [memo <comment>]
+```
+
+#### Components
+
+- `item` and `amount`: One or more purchase items, optionally comma-separated
+- `@|at <merchant>`: Merchant name (e.g., `@ Starbucks` or `at Starbucks`)
+- `with <payment>`: Payment method (e.g., `with visa`)
+- `for <entity>`: Entity or context (e.g., `for Personal`, `for Business`)
+- `on <date>`: Specific date (`YYYY-MM-DD`) or relative (`today`, `yesterday`)
+- `memo <comment>`: Free-form note (quote if it contains spaces)
+
+#### Examples
+
+```bash
+add coffee 10 @ Starbucks
+add lunch 25 with visa for Personal on today
+add coffee 10, croissant 5 @ Starbucks memo "morning coffee"
+add groceries 45.20 USD @ Trader Joe's with amex for Household on 2025-09-20
+```
+
+#### How mapping works
+
+The parser extracts items, merchant, payment, entity, date, currency, and memo. Then your rules map these to accounts:
+
+- Item rules → expense accounts (debits)
+- Merchant rules → default categories or accounts
+- Payment rules → funding/asset or liability account (credit side)
+- Default currency/entity come from rules or repository defaults
+
+The result is a standard Ledger transaction inserted into the input for you to confirm or edit.
+
+> Tip: If an item or merchant isn’t mapped as you expect, update your rules in `rules/*.json` and try again.
+
+---
+
 ### `add transaction`
 
 Add a new transaction template to the current journal file.
