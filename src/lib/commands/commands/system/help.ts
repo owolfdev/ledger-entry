@@ -61,7 +61,28 @@ export const helpCommand: Command = {
     context.logger.addLog("info", "✏️ Transaction Commands:");
     context.logger.addLog(
       "info",
-      "  add transaction  - Add transaction template"
+      "  add              - Add a transaction using natural language"
+    );
+    context.logger.addLog(
+      "info",
+      "                   Usage: add <item> <amount> [currency] [, <item> <amount>] [@|at <merchant>] [with <payment>] [for <entity>] [on <date>] [memo <comment>]"
+    );
+    context.logger.addLog("info", "                   Examples:");
+    context.logger.addLog(
+      "info",
+      "                     • add coffee 10 @ Starbucks"
+    );
+    context.logger.addLog(
+      "info",
+      "                     • add lunch 25 with visa for Personal on today"
+    );
+    context.logger.addLog(
+      "info",
+      '                     • add coffee 10, croissant 5 @ Starbucks memo "morning coffee"'
+    );
+    context.logger.addLog(
+      "info",
+      "                   Notes: merchant with @|at, payment with 'with', entity with 'for', date with 'on' (YYYY-MM-DD or relative), memo with 'memo'"
     );
     context.logger.addLog("info", "");
     context.logger.addLog("info", "📝 Direct Transaction Entry:");

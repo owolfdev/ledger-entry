@@ -1,4 +1,4 @@
-import { readdir, stat } from "fs/promises";
+import { readFile, readdir, stat } from "fs/promises";
 import { join } from "path";
 import Link from "next/link";
 import { FileText, Folder, Menu } from "lucide-react";
@@ -51,11 +51,24 @@ async function getDocsStructure(): Promise<DocItem[]> {
     }
 
     // Sort: directories first, then files alphabetically
-    return result.sort((a, b) => {
+    const sorted = result.sort((a, b) => {
       if (a.isDirectory && !b.isDirectory) return -1;
       if (!a.isDirectory && b.isDirectory) return 1;
       return a.name.localeCompare(b.name);
     });
+
+    // Move 'development' directory to the end at the top level
+    if (!relativePath) {
+      const devIndex = sorted.findIndex(
+        (i) => i.isDirectory && i.name.toLowerCase() === "development"
+      );
+      if (devIndex >= 0) {
+        const [dev] = sorted.splice(devIndex, 1);
+        sorted.push(dev);
+      }
+    }
+
+    return sorted;
   }
 
   return scanDirectory(docsPath);
@@ -115,15 +128,25 @@ function DocItemComponent({
 
 export default async function DocsPage() {
   const docs = await getDocsStructure();
+  // Try loading docs/README.md to show MD content on splash
+  let rootReadme: { content: string; title: string } | null = null;
+  try {
+    const filePath = join(process.cwd(), "docs", "README.md");
+    const content = await readFile(filePath, "utf-8");
+    const titleMatch = content.match(/^#\s+(.+)$/m);
+    const title = titleMatch ? titleMatch[1] : "Overview";
+    rootReadme = { content, title };
+  } catch {}
 
   return (
     <div className="h-full bg-background">
       <div className="container mx-auto px-6 py-8">
         <div className="max-w-7xl mx-auto">
           <div className="mb-8">
-            <h1 className="text-3xl font-bold mb-2">Documentation</h1>
+            <h1 className="text-3xl font-bold mb-2">Ledger Entry Docs</h1>
             <p className="text-muted-foreground">
-              Browse all project documentation organized by topic and category.
+              A natural-language interface for double-entry accounting with
+              GitHub-backed storage.
             </p>
           </div>
 
@@ -168,63 +191,182 @@ export default async function DocsPage() {
             <div className="lg:col-span-9">
               <div className="bg-card border border-border rounded-lg p-8 shadow-sm">
                 <div className="prose prose-slate dark:prose-invert max-w-none">
-                  <h2>Welcome to the Documentation</h2>
-                  <p>
-                    This documentation is automatically generated from the{" "}
-                    <code>docs/</code> folder in the project. Documents are
-                    organized by folders and can be easily navigated using the
-                    sidebar.
-                  </p>
+                  {rootReadme ? (
+                    <>
+                      <h2 className="text-3xl font-bold mb-6">
+                        {rootReadme.title}
+                      </h2>
+                      <div
+                        dangerouslySetInnerHTML={{
+                          __html: rootReadme.content
+                            .replace(/^#\s+.+$/m, "")
+                            .replace(
+                              /^##\s+(.+)$/gm,
+                              '<h2 class="text-2xl font-semibold mt-8 mb-4">$1</h2>'
+                            )
+                            .replace(
+                              /^###\s+(.+)$/gm,
+                              '<h3 class="text-xl font-semibold mt-6 mb-3">$1</h3>'
+                            )
+                            .replace(
+                              /^####\s+(.+)$/gm,
+                              '<h4 class="text-lg font-semibold mt-4 mb-2">$1</h4>'
+                            )
+                            .replace(
+                              /^\*\s+(.+)$/gm,
+                              '<li class="ml-4">$1</li>'
+                            )
+                            .replace(
+                              /^\-\s+(.+)$/gm,
+                              '<li class="ml-4">$1</li>'
+                            )
+                            .replace(
+                              /^\d+\.\s+(.+)$/gm,
+                              '<li class="ml-4">$1</li>'
+                            )
+                            .replace(
+                              /`([^`]+)`/g,
+                              '<code class="bg-muted px-1 py-0.5 rounded text-sm">$1</code>'
+                            )
+                            .replace(
+                              /```(\w+)?\n([\s\S]*?)```/g,
+                              '<pre class="bg-muted p-4 rounded-lg overflow-x-auto"><code>$2</code></pre>'
+                            )
+                            .replace(
+                              /\[([^\]]+)\]\(([^)]+)\)/g,
+                              '<a href="$2" class="text-primary hover:underline">$1</a>'
+                            )
+                            .replace(/\n\n/g, '</p><p class="mb-4">')
+                            .replace(
+                              /^(?!<[h|l|p|d|a|s])/gm,
+                              '<p class="mb-4">'
+                            )
+                            .replace(
+                              /(<li[^>]*>.*<\/li>)/g,
+                              '<ul class="list-disc list-inside mb-4">$1</ul>'
+                            ),
+                        }}
+                      />
+                    </>
+                  ) : (
+                    <>
+                      <h2>What is Ledger Entry?</h2>
+                      <p>
+                        Ledger Entry helps you record personal or business
+                        finances using plain language. It converts your words
+                        into balanced double-entry transactions and stores them
+                        as standard Ledger journal files in your own GitHub
+                        repository.
+                      </p>
 
-                  <h3>Getting Started</h3>
-                  <p>
-                    Start with the{" "}
-                    <Link
-                      href="/docs/README"
-                      className="text-primary hover:underline"
-                    >
-                      main README
-                    </Link>
-                    for an overview of the project and available documentation.
-                  </p>
+                      <h2>Why use it?</h2>
+                      <ul>
+                        <li>
+                          <strong>Fast capture:</strong> Type what happened; we
+                          generate the entry.
+                        </li>
+                        <li>
+                          <strong>Own your data:</strong> Journals live in your
+                          GitHub repo, versioned and portable.
+                        </li>
+                        <li>
+                          <strong>Compatible:</strong> Works with the Ledger CLI
+                          and existing journal workflows.
+                        </li>
+                      </ul>
 
-                  <h3>Key Documents</h3>
-                  <ul>
-                    <li>
-                      <Link
-                        href="/docs/SPEC_FOR_LEDGER_APP"
-                        className="text-primary hover:underline"
-                      >
-                        High-level Specification
-                      </Link>{" "}
-                      - Project overview and requirements
-                    </li>
-                    <li>
-                      <Link
-                        href="/docs/KEYBOARD_SHORTCUTS"
-                        className="text-primary hover:underline"
-                      >
-                        Keyboard Shortcuts
-                      </Link>{" "}
-                      - All available keyboard shortcuts
-                    </li>
-                    <li>
-                      <Link
-                        href="/docs/AUTH_SETUP"
-                        className="text-primary hover:underline"
-                      >
-                        Authentication Setup
-                      </Link>{" "}
-                      - How to configure authentication
-                    </li>
-                  </ul>
+                      <h2>How it works</h2>
+                      <ol>
+                        <li>
+                          Connect a GitHub repo that contains your journals,
+                          rules, and accounts.
+                        </li>
+                        <li>
+                          Enter a command like{" "}
+                          <code>add coffee 10 @ Starbucks with visa</code>.
+                        </li>
+                        <li>
+                          Rules map items, merchants, and payments to the right
+                          accounts and currency.
+                        </li>
+                        <li>
+                          Review, tweak if needed, then save to the current
+                          month’s journal.
+                        </li>
+                      </ol>
 
-                  <h3>Organization</h3>
-                  <p>
-                    Documents are automatically organized by folders. You can
-                    create new folders in the <code>docs/</code> directory to
-                    group related documentation.
-                  </p>
+                      <h2>Example</h2>
+                      <pre className="bg-muted p-4 rounded-lg overflow-x-auto">
+                        <code>
+                          add coffee 10 @ Starbucks with visa memo &quot;morning
+                          pick-me-up&quot;
+                        </code>
+                      </pre>
+                      <p className="text-sm text-muted-foreground">
+                        The app parses this and prepares a balanced entry based
+                        on your rules.
+                      </p>
+
+                      <h2>What you’ll need</h2>
+                      <ul>
+                        <li>
+                          A GitHub account and repository (we can help you
+                          create one).
+                        </li>
+                        <li>
+                          Basic accounts and optional rules for
+                          items/merchants/payments.
+                        </li>
+                      </ul>
+
+                      <h2>Quick start</h2>
+                      <ul>
+                        <li>
+                          <Link
+                            href="/docs/user/getting-started/introduction"
+                            className="text-primary hover:underline"
+                          >
+                            Introduction
+                          </Link>
+                        </li>
+                        <li>
+                          <Link
+                            href="/docs/user/getting-started/create-repository"
+                            className="text-primary hover:underline"
+                          >
+                            Create your repository
+                          </Link>
+                        </li>
+                        <li>
+                          <Link
+                            href="/docs/user/configuration/overview"
+                            className="text-primary hover:underline"
+                          >
+                            Configure GitHub access
+                          </Link>
+                        </li>
+                        <li>
+                          <Link
+                            href="/docs/user/commands/overview"
+                            className="text-primary hover:underline"
+                          >
+                            Learn the command system
+                          </Link>
+                        </li>
+                      </ul>
+
+                      <p className="text-muted-foreground">
+                        Looking for developer docs? See the{" "}
+                        <Link
+                          href="/docs/development/README"
+                          className="text-primary hover:underline"
+                        >
+                          development
+                        </Link>{" "}
+                        section.
+                      </p>
+                    </>
+                  )}
                 </div>
               </div>
             </div>

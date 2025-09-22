@@ -51,11 +51,24 @@ async function getDocsStructure(): Promise<DocItem[]> {
       }
     }
 
-    return result.sort((a, b) => {
+    const sorted = result.sort((a, b) => {
       if (a.isDirectory && !b.isDirectory) return -1;
       if (!a.isDirectory && b.isDirectory) return 1;
       return a.name.localeCompare(b.name);
     });
+
+    // Move 'development' directory to the end at the top level
+    if (!relativePath) {
+      const devIndex = sorted.findIndex(
+        (i) => i.isDirectory && i.name.toLowerCase() === "development"
+      );
+      if (devIndex >= 0) {
+        const [dev] = sorted.splice(devIndex, 1);
+        sorted.push(dev);
+      }
+    }
+
+    return sorted;
   }
 
   return scanDirectory(docsPath);
