@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist } from "next/font/google";
 import { ThemeProvider } from "next-themes";
+import { PWARegister } from "@/components/pwa-register";
 import { LayoutProvider } from "@/contexts/layout-context";
 import { Header } from "@/components/app-header";
 import "./globals.css";
@@ -29,6 +30,16 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning className="h-full">
+      <head>
+        <link rel="manifest" href="/manifest.webmanifest" />
+        <meta name="theme-color" content="#0b0b0f" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta
+          name="apple-mobile-web-app-status-bar-style"
+          content="black-translucent"
+        />
+        <link rel="apple-touch-icon" href="/icons/icon-192.png" />
+      </head>
       <body className={`${geistSans.className} antialiased h-full`}>
         <ThemeProvider
           attribute="class"
@@ -43,6 +54,7 @@ export default function RootLayout({
             </div>
           </LayoutProvider>
         </ThemeProvider>
+        <PWARegister />
       </body>
     </html>
   );
