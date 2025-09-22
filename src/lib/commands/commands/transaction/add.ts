@@ -102,8 +102,12 @@ export const addCommand: Command = {
         "info",
         `   → Debit accounts: ${appliedRules.debitAccounts
           .map(
-            (item: { account: string; amount: number; currency: string }) =>
-              `${item.account} (${item.amount} ${item.currency})`
+            (item: {
+              account: string;
+              amount: number;
+              currency: string;
+              itemName: string;
+            }) => `${item.account} (${item.amount} ${item.currency})`
           )
           .join(", ")}`
       );

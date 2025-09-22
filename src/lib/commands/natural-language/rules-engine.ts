@@ -242,7 +242,12 @@ export function applyRules(
   parsedCommand: ParsedAddCommand,
   rules: MergedRuleSet
 ): {
-  debitAccounts: Array<{ account: string; amount: number; currency: string }>;
+  debitAccounts: Array<{
+    account: string;
+    amount: number;
+    currency: string;
+    itemName: string;
+  }>;
   creditAccount: string;
   currency: string;
   entity: string;
