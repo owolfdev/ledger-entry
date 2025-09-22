@@ -56,6 +56,8 @@ export async function loadRules(context: RulesContext): Promise<{
   rules: MergedRuleSet;
   accounts: AccountInfo[];
 }> {
+  console.log(`🔄 Loading rules from GitHub: ${context.owner}/${context.repo}`);
+
   try {
     // Load rules files in precedence order (highest to lowest)
     const rulesFiles = [
@@ -69,16 +71,28 @@ export async function loadRules(context: RulesContext): Promise<{
 
     for (const file of rulesFiles) {
       try {
+        console.log(`📁 Loading rules file: ${file.path}`);
         const response = await fetch(
           `/api/github/files?owner=${context.owner}&repo=${
             context.repo
           }&path=${encodeURIComponent(file.path)}`
         );
 
+        console.log(`📡 Response status for ${file.path}: ${response.status}`);
+
         if (response.ok) {
           const data = await response.json();
           const ruleSet: RuleSet = JSON.parse(data.content);
+          console.log(
+            `✅ Loaded ${file.path}: ${ruleSet.items?.length || 0} items, ${
+              ruleSet.merchants?.length || 0
+            } merchants, ${ruleSet.payments?.length || 0} payments`
+          );
           loadedRules.push(ruleSet);
+        } else {
+          console.log(
+            `❌ Failed to load ${file.path}: ${response.status} ${response.statusText}`
+          );
         }
       } catch (error) {
         console.warn(`Failed to load rules file ${file.path}:`, error);
@@ -88,20 +102,34 @@ export async function loadRules(context: RulesContext): Promise<{
     // Load accounts.journal
     let accounts: AccountInfo[] = [];
     try {
+      console.log(`📁 Loading accounts.journal`);
       const response = await fetch(
         `/api/github/files?owner=${context.owner}&repo=${context.repo}&path=accounts.journal`
+      );
+
+      console.log(
+        `📡 Response status for accounts.journal: ${response.status}`
       );
 
       if (response.ok) {
         const data = await response.json();
         accounts = parseAccountsJournal(data.content);
+        console.log(`✅ Loaded accounts.journal: ${accounts.length} accounts`);
+      } else {
+        console.log(
+          `❌ Failed to load accounts.journal: ${response.status} ${response.statusText}`
+        );
       }
     } catch (error) {
       console.warn("Failed to load accounts.journal:", error);
     }
 
     // Merge rules with precedence
+    console.log(`🔀 Merging ${loadedRules.length} rule sets`);
     const mergedRules = mergeRules(loadedRules);
+    console.log(
+      `📊 Final merged rules: ${mergedRules.items.length} items, ${mergedRules.merchants.length} merchants, ${mergedRules.payments.length} payments`
+    );
 
     return { rules: mergedRules, accounts };
   } catch (error) {
@@ -233,16 +261,34 @@ export function applyRules(
     account: string;
     amount: number;
     currency: string;
+    itemName: string;
   }> = [];
 
   for (const item of items) {
     let debitAccount = findItemAccount(item.name, rules);
 
-    // Check if merchant overrides the account
-    if (merchant) {
+    // Only use merchant account as fallback if no item rule matched
+    if (!debitAccount && merchant) {
       const merchantAccount = findMerchantAccount(merchant, rules);
       if (merchantAccount) {
         debitAccount = merchantAccount;
+        console.log(
+          `🔄 Using merchant fallback for "${item.name}": ${merchantAccount}`
+        );
+      }
+    }
+
+    // Replace entity in account name if different from default
+    if (debitAccount && targetEntity !== rules.defaults.entity) {
+      const originalAccount = debitAccount;
+      // Replace the first part (entity) of the account name
+      const parts = debitAccount.split(":");
+      if (parts.length > 1) {
+        parts[0] = targetEntity;
+        debitAccount = parts.join(":");
+        console.log(
+          `🔄 Entity replacement: "${originalAccount}" -> "${debitAccount}"`
+        );
       }
     }
 
@@ -255,6 +301,7 @@ export function applyRules(
       account: debitAccount,
       amount: item.amount,
       currency: item.currency || targetCurrency,
+      itemName: item.name,
     });
   }
 
@@ -262,6 +309,20 @@ export function applyRules(
   let creditAccount = payment ? findPaymentAccount(payment, rules) : null;
   if (!creditAccount) {
     creditAccount = rules.defaults.fallbackCredit;
+  }
+
+  // Replace entity in credit account name if different from default
+  if (creditAccount && targetEntity !== rules.defaults.entity) {
+    const originalCreditAccount = creditAccount;
+    // Replace the first part (entity) of the account name
+    const parts = creditAccount.split(":");
+    if (parts.length > 1) {
+      parts[0] = targetEntity;
+      creditAccount = parts.join(":");
+      console.log(
+        `🔄 Credit entity replacement: "${originalCreditAccount}" -> "${creditAccount}"`
+      );
+    }
   }
 
   return {
@@ -280,16 +341,24 @@ function findItemAccount(
   itemName: string,
   rules: MergedRuleSet
 ): string | null {
+  console.log(`🔍 Finding account for item: "${itemName}"`);
+  console.log(`📋 Available item rules: ${rules.items.length}`);
+
   for (const item of rules.items) {
     try {
-      const regex = new RegExp(item.pattern, "i");
+      // Remove (?i) inline flag if present, as JavaScript doesn't support it
+      const cleanPattern = item.pattern.replace(/^\(\?i\)/, "");
+      const regex = new RegExp(cleanPattern, "i");
       if (regex.test(itemName)) {
+        console.log(`✅ Matched item rule: "${item.pattern}" -> ${item.debit}`);
         return item.debit;
       }
     } catch {
       console.warn(`Invalid regex pattern in item rule: ${item.pattern}`);
     }
   }
+
+  console.log(`❌ No item rule matched for: "${itemName}"`);
   return null;
 }
 
@@ -300,10 +369,18 @@ function findMerchantAccount(
   merchantName: string,
   rules: MergedRuleSet
 ): string | null {
+  console.log(`🏪 Finding merchant account for: "${merchantName}"`);
+  console.log(`📋 Available merchant rules: ${rules.merchants.length}`);
+
   for (const merchant of rules.merchants) {
     try {
-      const regex = new RegExp(merchant.pattern, "i");
+      // Remove (?i) inline flag if present, as JavaScript doesn't support it
+      const cleanPattern = merchant.pattern.replace(/^\(\?i\)/, "");
+      const regex = new RegExp(cleanPattern, "i");
       if (regex.test(merchantName)) {
+        console.log(
+          `✅ Matched merchant rule: "${merchant.pattern}" -> ${merchant.defaultDebit}`
+        );
         return merchant.defaultDebit;
       }
     } catch {
@@ -312,6 +389,8 @@ function findMerchantAccount(
       );
     }
   }
+
+  console.log(`❌ No merchant rule matched for: "${merchantName}"`);
   return null;
 }
 
@@ -326,7 +405,9 @@ function findPaymentAccount(
 
   for (const payment of rules.payments) {
     try {
-      const regex = new RegExp(payment.pattern, "i");
+      // Remove (?i) inline flag if present, as JavaScript doesn't support it
+      const cleanPattern = payment.pattern.replace(/^\(\?i\)/, "");
+      const regex = new RegExp(cleanPattern, "i");
       if (regex.test(paymentMethod)) {
         return payment.credit;
       }
@@ -343,7 +424,12 @@ function findPaymentAccount(
 export function generateLedgerEntry(
   parsedCommand: ParsedAddCommand,
   appliedRules: {
-    debitAccounts: Array<{ account: string; amount: number; currency: string }>;
+    debitAccounts: Array<{
+      account: string;
+      amount: number;
+      currency: string;
+      itemName: string;
+    }>;
     creditAccount: string;
     currency: string;
     merchant?: string;
@@ -359,10 +445,8 @@ export function generateLedgerEntry(
 
   // Generate description
   let description = merchant || "Transaction";
-  if (debitAccounts.length > 1) {
-    description = `${debitAccounts
-      .map((item) => item.account.split(":").pop())
-      .join(", ")}`;
+  if (!merchant && debitAccounts.length > 1) {
+    description = `${debitAccounts.map((item) => item.itemName).join(", ")}`;
   }
 
   // Generate entry

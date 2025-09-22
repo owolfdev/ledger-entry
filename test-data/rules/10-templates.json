@@ -28,6 +28,11 @@
       "priority": 10
     },
     {
+      "pattern": "(?i)bakery|bread|pastry|croissant|muffin|bagel|cake|เบเกอรี่|ขนมปัง|ครัวซองต์",
+      "debit": "Personal:Expenses:Food:Bakery",
+      "priority": 10
+    },
+    {
       "pattern": "(?i)delivery|grab|foodpanda|lineman|เดลิเวอรี่|ส่งอาหาร",
       "debit": "Personal:Expenses:Food:Delivery",
       "priority": 10
