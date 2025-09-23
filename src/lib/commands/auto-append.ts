@@ -180,6 +180,19 @@ export async function autoAppendLedgerEntry(
       throw new Error(`Failed to save file: ${saveResponse.statusText}`);
     }
 
+    // Invalidate rules cache if a rule file was saved (unlikely but possible)
+    if (journalFile.startsWith("rules/") && journalFile.endsWith(".json")) {
+      try {
+        const { invalidateRulesCache } = await import(
+          "./natural-language/rules-engine"
+        );
+        invalidateRulesCache(context.repository.owner, context.repository.repo);
+        console.log(`🗑️ Rules cache invalidated due to ${journalFile} save`);
+      } catch (error) {
+        console.warn("Failed to invalidate rules cache:", error);
+      }
+    }
+
     // Update main.journal if this is a new file
     if (!fileExists) {
       await updateMainJournal(context, entry.yearMonth, journalFile);

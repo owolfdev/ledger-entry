@@ -113,6 +113,9 @@ export default function LedgerInterface() {
   // Track if files have been loaded for current repository
   const filesLoadedRef = useRef<string | null>(null);
 
+  // Track if rules have been loaded for current repository
+  const rulesLoadedRef = useRef<string | null>(null);
+
   // Track if we've attempted to load the default file
   const defaultFileLoadedRef = useRef(false);
 
@@ -494,6 +497,58 @@ export default function LedgerInterface() {
     },
     []
   );
+
+  // Load rules when repository is connected
+  useEffect(() => {
+    const loadRules = async () => {
+      if (!repository) return;
+
+      const repoKey = `${repository.owner}/${repository.repo}`;
+      if (rulesLoadedRef.current === repoKey) return;
+
+      rulesLoadedRef.current = repoKey;
+
+      // Add loading message with specific ID
+      const loadingLogId = Date.now().toString();
+      const loadingLog: LogMessage = {
+        id: loadingLogId,
+        type: "loading",
+        message: "📋 Loading rules and accounts from repository",
+        timestamp: new Date(),
+      };
+      setLogs((prev) => [...prev, loadingLog]);
+
+      try {
+        // Import the rules engine
+        const { loadRules: loadRulesFromEngine } = await import(
+          "@/lib/commands/natural-language/rules-engine"
+        );
+
+        const { rules, accounts } = await loadRulesFromEngine({
+          owner: repository.owner,
+          repo: repository.repo,
+        });
+
+        // Remove loading message and add success
+        setLogs((prev) => prev.filter((log) => log.id !== loadingLogId));
+        addLogRef.current(
+          "success",
+          `Loaded ${rules.items.length} item rules, ${rules.merchants.length} merchant rules, ${rules.payments.length} payment rules, ${accounts.length} accounts`
+        );
+      } catch (error) {
+        // Remove loading message and add error
+        setLogs((prev) => prev.filter((log) => log.id !== loadingLogId));
+        addLogRef.current(
+          "warning",
+          `Failed to load rules: ${
+            error instanceof Error ? error.message : "Unknown error"
+          }`
+        );
+      }
+    };
+
+    loadRules();
+  }, [repository]); // Only depend on repository
 
   // Load available files when repository is connected
   useEffect(() => {

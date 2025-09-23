@@ -49,6 +49,12 @@ export interface RulesContext {
   repo: string;
 }
 
+// Simple in-memory cache for rules and accounts, keyed by owner/repo
+const RULES_CACHE = new Map<
+  string,
+  { rules: MergedRuleSet; accounts: AccountInfo[] }
+>();
+
 /**
  * Load all rules from GitHub repo with precedence
  */
@@ -56,6 +62,15 @@ export async function loadRules(context: RulesContext): Promise<{
   rules: MergedRuleSet;
   accounts: AccountInfo[];
 }> {
+  const cacheKey = `${context.owner}/${context.repo}`;
+
+  // Return cached value if available
+  const cached = RULES_CACHE.get(cacheKey);
+  if (cached) {
+    console.log(`✅ Using cached rules for ${cacheKey}`);
+    return { rules: cached.rules, accounts: cached.accounts };
+  }
+
   console.log(`🔄 Loading rules from GitHub: ${context.owner}/${context.repo}`);
 
   try {
@@ -130,6 +145,12 @@ export async function loadRules(context: RulesContext): Promise<{
     console.log(
       `📊 Final merged rules: ${mergedRules.items.length} items, ${mergedRules.merchants.length} merchants, ${mergedRules.payments.length} payments`
     );
+
+    // Store in cache
+    RULES_CACHE.set(cacheKey, {
+      rules: mergedRules,
+      accounts,
+    });
 
     return { rules: mergedRules, accounts };
   } catch (error) {
@@ -475,4 +496,29 @@ export function generateLedgerEntry(
   }
 
   return entry.trim();
+}
+
+/**
+ * Invalidate rules cache for a specific repository
+ */
+export function invalidateRulesCache(owner: string, repo: string): void {
+  const cacheKey = `${owner}/${repo}`;
+  const wasCached = RULES_CACHE.has(cacheKey);
+  RULES_CACHE.delete(cacheKey);
+
+  if (wasCached) {
+    console.log(`🗑️ Invalidated rules cache for ${cacheKey}`);
+  }
+}
+
+/**
+ * Invalidate all rules cache
+ */
+export function clearRulesCache(): void {
+  const count = RULES_CACHE.size;
+  RULES_CACHE.clear();
+
+  if (count > 0) {
+    console.log(`🗑️ Cleared all rules cache (${count} entries)`);
+  }
 }

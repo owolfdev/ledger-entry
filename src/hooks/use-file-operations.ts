@@ -74,6 +74,24 @@ export function useFileOperations({ owner, repo }: UseFileOperationsProps) {
 
         setCurrentFile((prev) => (prev ? { ...prev, content } : null));
         setIsModified(false);
+
+        // Invalidate rules cache if a rule file was saved
+        if (
+          currentFile.path.startsWith("rules/") &&
+          currentFile.path.endsWith(".json")
+        ) {
+          try {
+            const { invalidateRulesCache } = await import(
+              "@/lib/commands/natural-language/rules-engine"
+            );
+            invalidateRulesCache(owner, repo);
+            console.log(
+              `🗑️ Rules cache invalidated due to ${currentFile.path} save`
+            );
+          } catch (error) {
+            console.warn("Failed to invalidate rules cache:", error);
+          }
+        }
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to save file");
       } finally {
