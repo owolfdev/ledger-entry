@@ -10,6 +10,15 @@ import {
   generateLedgerEntry,
 } from "../../natural-language/rules-engine";
 
+interface ItemMapping {
+  itemName: string;
+  originalAccount: string;
+  amount: number;
+  currency: string;
+}
+
+// Global type declaration is in auto-append.ts
+
 export const addCommand: Command = {
   name: "add",
   description: "Add a transaction using natural language",
@@ -120,6 +129,26 @@ export const addCommand: Command = {
       context.logger.addLog("info", "   → Generating Ledger entry...");
 
       const ledgerEntry = generateLedgerEntry(parseResult.data, appliedRules);
+
+      // Store item mappings for learning system
+      if (typeof window !== "undefined") {
+        const itemMappings: ItemMapping[] = appliedRules.debitAccounts.map(
+          (debit) => ({
+            itemName: debit.itemName,
+            originalAccount: debit.account,
+            amount: debit.amount,
+            currency: debit.currency,
+          })
+        );
+
+        window.__lastAddCommand = {
+          parsedCommand: parseResult.data,
+          appliedRules: appliedRules,
+          generatedEntry: ledgerEntry,
+          itemMappings: itemMappings,
+          timestamp: Date.now(),
+        };
+      }
 
       // Remove loading messages
       context.logger.setLogs(

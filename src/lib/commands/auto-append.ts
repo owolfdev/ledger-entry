@@ -5,6 +5,45 @@
 import type { CommandContext } from "./types";
 import type { ParsedLedgerEntry } from "./intent-detector";
 import { validateLedgerEntry } from "./ledger-validator";
+import {
+  detectAccountChanges,
+  learnFromCorrection,
+} from "./natural-language/learning";
+import { ParsedAddCommand } from "./natural-language/parser";
+
+interface ItemMapping {
+  itemName: string;
+  originalAccount: string;
+  amount: number;
+  currency: string;
+}
+
+interface AppliedRules {
+  debitAccounts: Array<{
+    account: string;
+    amount: number;
+    currency: string;
+    itemName: string;
+  }>;
+  creditAccount: string;
+  currency: string;
+  entity: string;
+  merchant?: string;
+}
+
+interface LastAddCommand {
+  parsedCommand: ParsedAddCommand;
+  appliedRules: AppliedRules;
+  generatedEntry: string;
+  itemMappings: ItemMapping[];
+  timestamp: number;
+}
+
+declare global {
+  interface Window {
+    __lastAddCommand?: LastAddCommand;
+  }
+}
 
 export interface AutoAppendResult {
   success: boolean;
@@ -180,6 +219,134 @@ export async function autoAppendLedgerEntry(
       throw new Error(`Failed to save file: ${saveResponse.statusText}`);
     }
 
+    // Check for learning opportunities when journal files are saved
+    if (
+      journalFile.startsWith("journals/") &&
+      journalFile.endsWith(".journal")
+    ) {
+      try {
+        // Check if we have a recent add command context
+        const lastAddCommand =
+          typeof window !== "undefined" ? window.__lastAddCommand : null;
+
+        if (lastAddCommand) {
+          // Check if the command is recent (within last 5 minutes)
+          const commandAge = Date.now() - lastAddCommand.timestamp;
+
+          if (commandAge <= 5 * 60 * 1000) {
+            // Detect account changes - compare original with the new entry being added
+            const newEntry = entryToAppend.trim();
+
+            const changes = detectAccountChanges(
+              lastAddCommand.generatedEntry,
+              newEntry,
+              lastAddCommand.itemMappings
+            );
+
+            if (changes.length > 0) {
+              // Show prominent change detection message
+              context.logger.addLog("warning", `🔍 ACCOUNT CHANGE DETECTED!`);
+              context.logger.addLog(
+                "warning",
+                `   The system detected that you modified account names in your entry.`
+              );
+
+              for (const change of changes) {
+                context.logger.addLog("info", `   Item: "${change.itemName}"`);
+                context.logger.addLog(
+                  "info",
+                  `   Original: ${change.originalAccount}`
+                );
+                context.logger.addLog(
+                  "info",
+                  `   Modified: ${change.finalAccount}`
+                );
+                context.logger.addLog(
+                  "info",
+                  `   Amount: ${change.amount} ${change.currency}`
+                );
+
+                // Attempt to learn from the change
+                const learningContext = {
+                  owner: context.repository.owner,
+                  repo: context.repository.repo,
+                  originalCommand: lastAddCommand.parsedCommand,
+                  originalAccount: change.originalAccount,
+                  finalAccount: change.finalAccount,
+                  itemName: change.itemName,
+                };
+
+                context.logger.addLog(
+                  "info",
+                  `🧠 Learning rule for "${change.itemName}"...`
+                );
+
+                const learned = await learnFromCorrection(learningContext);
+                if (learned) {
+                  context.logger.addLog("success", `🧠 LEARNED NEW RULE:`);
+                  context.logger.addLog(
+                    "success",
+                    `   Pattern: "(?i)${change.itemName}"`
+                  );
+                  context.logger.addLog(
+                    "success",
+                    `   Account: ${change.finalAccount}`
+                  );
+                  context.logger.addLog("success", `   Confidence: 0.8`);
+                  context.logger.addLog(
+                    "success",
+                    `   ✅ This rule will be used for future "${change.itemName}" entries!`
+                  );
+
+                  // Invalidate rules cache so the new rule is immediately available
+                  try {
+                    const { invalidateRulesCache } = await import(
+                      "./natural-language/rules-engine"
+                    );
+                    invalidateRulesCache(
+                      context.repository.owner,
+                      context.repository.repo
+                    );
+                    context.logger.addLog(
+                      "info",
+                      `🔄 Rules cache invalidated - new rule is now active!`
+                    );
+                  } catch (error) {
+                    console.warn(
+                      "Failed to invalidate rules cache after learning:",
+                      error
+                    );
+                    context.logger.addLog(
+                      "warning",
+                      `⚠️ New rule saved but cache not refreshed - restart may be needed`
+                    );
+                  }
+                } else {
+                  context.logger.addLog("error", `❌ LEARNING FAILED:`);
+                  context.logger.addLog(
+                    "error",
+                    `   Could not save rule for "${change.itemName}"`
+                  );
+                }
+              }
+            }
+            // Only show "no changes" message if we actually checked for changes
+            // (Don't show it if there's no context or it's too old)
+
+            // Clear the stored command context after learning
+            if (typeof window !== "undefined") {
+              delete window.__lastAddCommand;
+            }
+          }
+          // Don't show messages for old commands - just silently skip
+        }
+        // Don't show messages when there's no context - just silently skip
+      } catch (error) {
+        console.warn("Learning system error:", error);
+        context.logger.addLog("error", "❌ Learning system error");
+      }
+    }
+
     // Invalidate rules cache if a rule file was saved (unlikely but possible)
     if (journalFile.startsWith("rules/") && journalFile.endsWith(".json")) {
       try {
@@ -187,7 +354,6 @@ export async function autoAppendLedgerEntry(
           "./natural-language/rules-engine"
         );
         invalidateRulesCache(context.repository.owner, context.repository.repo);
-        console.log(`🗑️ Rules cache invalidated due to ${journalFile} save`);
       } catch (error) {
         console.warn("Failed to invalidate rules cache:", error);
       }
