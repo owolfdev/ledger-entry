@@ -411,7 +411,59 @@ export default function LedgerInterface() {
       addLog("info", "Ledger CLI Interface initialized");
       initializationLoggedRef.current = true;
     }
+
+    // Immediately clean up any persistent loading messages
+    setLogs((prev) =>
+      prev.filter(
+        (log) =>
+          !(
+            log.type === "loading" &&
+            log.message.includes("Loading rules and accounts")
+          )
+      )
+    );
   }, [addLog]);
+
+  // Cleanup any persistent loading messages
+  useEffect(() => {
+    const cleanupLoadingMessages = () => {
+      setLogs((prev) => {
+        const filtered = prev.filter(
+          (log) =>
+            !(
+              log.type === "loading" &&
+              log.message.includes("Loading rules and accounts")
+            )
+        );
+        if (filtered.length !== prev.length) {
+          console.log("🧹 Cleaned up persistent loading messages");
+        }
+        return filtered;
+      });
+    };
+
+    // Clean up loading messages immediately and then every 2 seconds
+    cleanupLoadingMessages();
+    const interval = setInterval(cleanupLoadingMessages, 2000);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  // Clean up loading messages when repository changes
+  useEffect(() => {
+    if (repository) {
+      // Clean up any existing loading messages when repository is set
+      setLogs((prev) =>
+        prev.filter(
+          (log) =>
+            !(
+              log.type === "loading" &&
+              log.message.includes("Loading rules and accounts")
+            )
+        )
+      );
+    }
+  }, [repository]);
 
   // Load connected repository
   useEffect(() => {
@@ -500,12 +552,32 @@ export default function LedgerInterface() {
 
   // Load rules when repository is connected
   useEffect(() => {
+    console.log("🔍 Rules useEffect triggered, repository:", repository);
+    console.log(
+      "🔍 Repository owner:",
+      repository?.owner,
+      "repo:",
+      repository?.repo
+    );
     const loadRules = async () => {
-      if (!repository) return;
+      if (!repository) {
+        console.log("🔍 No repository, returning");
+        return;
+      }
 
       const repoKey = `${repository.owner}/${repository.repo}`;
-      if (rulesLoadedRef.current === repoKey) return;
+      console.log(
+        "🔍 Checking if rules already loaded for:",
+        repoKey,
+        "Current:",
+        rulesLoadedRef.current
+      );
+      if (rulesLoadedRef.current === repoKey) {
+        console.log("🔍 Rules already loaded, skipping");
+        return;
+      }
 
+      console.log("🔍 Setting rules loaded ref to:", repoKey);
       rulesLoadedRef.current = repoKey;
 
       // Add loading message with specific ID
@@ -516,7 +588,38 @@ export default function LedgerInterface() {
         message: "📋 Loading rules and accounts from repository",
         timestamp: new Date(),
       };
-      setLogs((prev) => [...prev, loadingLog]);
+      console.log("🔍 Adding loading message with ID:", loadingLogId);
+      setLogs((prev) => {
+        console.log("🔍 Current logs before adding loading:", prev.length);
+        // Check if there are already loading messages
+        const existingLoadingLogs = prev.filter(
+          (log) =>
+            log.type === "loading" &&
+            log.message.includes("Loading rules and accounts")
+        );
+        console.log("🔍 Existing loading logs:", existingLoadingLogs.length);
+        if (existingLoadingLogs.length > 0) {
+          console.log(
+            "🔍 WARNING: Found existing loading logs, removing them first"
+          );
+          const filtered = prev.filter(
+            (log) =>
+              !(
+                log.type === "loading" &&
+                log.message.includes("Loading rules and accounts")
+              )
+          );
+          const newLogs = [...filtered, loadingLog];
+          console.log(
+            "🔍 New logs after removing existing and adding new loading:",
+            newLogs.length
+          );
+          return newLogs;
+        }
+        const newLogs = [...prev, loadingLog];
+        console.log("🔍 New logs after adding loading:", newLogs.length);
+        return newLogs;
+      });
 
       try {
         // Import the rules engine
@@ -530,20 +633,39 @@ export default function LedgerInterface() {
         });
 
         // Remove loading message and add success
-        setLogs((prev) => prev.filter((log) => log.id !== loadingLogId));
-        addLogRef.current(
-          "success",
-          `Loaded ${rules.items.length} item rules, ${rules.merchants.length} merchant rules, ${rules.payments.length} payment rules, ${accounts.length} accounts`
-        );
+        console.log("🔍 Removing loading message with ID:", loadingLogId);
+        setLogs((prev) => {
+          const filtered = prev.filter((log) => log.id !== loadingLogId);
+          console.log(
+            "🔍 Filtered logs count:",
+            filtered.length,
+            "Original count:",
+            prev.length
+          );
+          // Add success message directly to the filtered logs
+          const successLog: LogMessage = {
+            id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+            type: "success",
+            message: `Loaded ${rules.items.length} item rules, ${rules.merchants.length} merchant rules, ${rules.payments.length} payment rules, ${accounts.length} accounts`,
+            timestamp: new Date(),
+          };
+          return [...filtered, successLog];
+        });
       } catch (error) {
         // Remove loading message and add error
-        setLogs((prev) => prev.filter((log) => log.id !== loadingLogId));
-        addLogRef.current(
-          "warning",
-          `Failed to load rules: ${
-            error instanceof Error ? error.message : "Unknown error"
-          }`
-        );
+        setLogs((prev) => {
+          const filtered = prev.filter((log) => log.id !== loadingLogId);
+          // Add error message directly to the filtered logs
+          const errorLog: LogMessage = {
+            id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+            type: "warning",
+            message: `Failed to load rules: ${
+              error instanceof Error ? error.message : "Unknown error"
+            }`,
+            timestamp: new Date(),
+          };
+          return [...filtered, errorLog];
+        });
       }
     };
 
