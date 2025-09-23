@@ -39,6 +39,7 @@ export default function LedgerInterface() {
   const [historyIndex, setHistoryIndex] = useState(-1);
   const [logs, setLogs] = useState<LogMessage[]>([]);
   const [ledgerContent, setLedgerContent] = useState("");
+  const [isExecutingCommand, setIsExecutingCommand] = useState(false);
 
   const [fileName] = useState("main.ledger");
   const [isModified, setIsModified] = useState(false);
@@ -877,28 +878,36 @@ export default function LedgerInterface() {
 
   const executeCommand = useCallback(
     async (cmd: string) => {
-      if (!cmd.trim()) return;
+      if (!cmd.trim() || isExecutingCommand) return;
 
-      // Add to history
-      setCommandHistory((prev) => [...prev, cmd]);
-      setHistoryIndex(-1);
+      // Set loading state
+      setIsExecutingCommand(true);
 
-      // Check if this is an add command that should populate the input
-      const isAddCommand = cmd.trim().toLowerCase().startsWith("add ");
+      try {
+        // Add to history
+        setCommandHistory((prev) => [...prev, cmd]);
+        setHistoryIndex(-1);
 
-      // Execute using new command system
-      await executeCommandNew(cmd);
+        // Check if this is an add command that should populate the input
+        const isAddCommand = cmd.trim().toLowerCase().startsWith("add ");
 
-      // Only clear the command if it's not an add command
-      if (!isAddCommand) {
-        setCommand("");
-        if (commandInputRef.current) {
-          commandInputRef.current.style.height = "auto";
-          commandInputRef.current.focus();
+        // Execute using new command system
+        await executeCommandNew(cmd);
+
+        // Only clear the command if it's not an add command
+        if (!isAddCommand) {
+          setCommand("");
+          if (commandInputRef.current) {
+            commandInputRef.current.style.height = "auto";
+            commandInputRef.current.focus();
+          }
         }
+      } finally {
+        // Always clear loading state
+        setIsExecutingCommand(false);
       }
     },
-    [executeCommandNew]
+    [executeCommandNew, isExecutingCommand]
   );
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -981,6 +990,7 @@ export default function LedgerInterface() {
                 setLogs={setLogs}
                 formatLogMessage={formatLogMessage}
                 message={message}
+                isExecutingCommand={isExecutingCommand}
               />
             </Panel>
 
@@ -1036,6 +1046,7 @@ export default function LedgerInterface() {
               setLogs={setLogs}
               formatLogMessage={formatLogMessage}
               message={message}
+              isExecutingCommand={isExecutingCommand}
             />
           </div>
         ) : showEditor ? (

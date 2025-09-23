@@ -18,6 +18,7 @@ interface TerminalPanelProps {
   setLogs: (logs: LogMessage[]) => void;
   formatLogMessage: (log: LogMessage) => React.ReactNode;
   message: string;
+  isExecutingCommand: boolean;
 }
 
 export function TerminalPanel({
@@ -31,6 +32,7 @@ export function TerminalPanel({
   setLogs,
   formatLogMessage,
   message,
+  isExecutingCommand,
 }: TerminalPanelProps) {
   return (
     <div className="h-full flex flex-col">
@@ -86,8 +88,13 @@ export function TerminalPanel({
               value={command}
               onChange={handleCommandChange}
               onKeyDown={handleKeyDown}
-              placeholder="Enter command..."
-              className="flex-1 bg-transparent text-foreground placeholder-muted-foreground focus:outline-none font-mono resize-none overflow-hidden min-h-6 px-2 py-1"
+              placeholder={
+                isExecutingCommand ? "Executing command..." : "Enter command..."
+              }
+              disabled={isExecutingCommand}
+              className={`flex-1 bg-transparent text-foreground placeholder-muted-foreground focus:outline-none font-mono resize-none overflow-hidden min-h-6 px-2 py-1 ${
+                isExecutingCommand ? "opacity-50 cursor-not-allowed" : ""
+              }`}
               rows={1}
               style={{ lineHeight: "1.5" }}
             />
