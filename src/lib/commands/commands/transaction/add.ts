@@ -155,6 +155,9 @@ export const addCommand: Command = {
         context.logger.logs.filter((log) => log.id !== loadingLogId)
       );
 
+      // Log the original command for reference
+      context.logger.addLog("info", `📝 Command: add ${commandText}`);
+
       // Populate the terminal input with the generated entry
       context.logger.addLog(
         "success",
