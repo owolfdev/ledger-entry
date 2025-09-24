@@ -128,7 +128,11 @@ export const addCommand: Command = {
       // Generate Ledger entry
       context.logger.addLog("info", "   → Generating Ledger entry...");
 
-      const ledgerEntry = generateLedgerEntry(parseResult.data, appliedRules);
+      const ledgerEntry = generateLedgerEntry(
+        parseResult.data,
+        appliedRules,
+        parseResult.data.date
+      );
 
       // Store item mappings for learning system
       if (typeof window !== "undefined") {
