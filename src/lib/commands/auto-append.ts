@@ -144,7 +144,7 @@ export async function autoAppendLedgerEntry(
     const loadingLogId = Date.now().toString();
     context.logger.addLog(
       "loading",
-      `📝 Processing ledger entry for ${entry.yearMonth}...`
+      `📝 Processing ledger entry for ${entry.yearMonth}`
     );
 
     // Add intermediate progress message
