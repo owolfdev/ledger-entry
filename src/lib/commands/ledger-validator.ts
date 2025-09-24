@@ -210,6 +210,9 @@ function validateTransactionStructure(content: string): ValidationResult {
     // Skip empty lines
     if (line.length === 0) continue;
 
+    // Skip comment lines (lines starting with semicolon)
+    if (line.startsWith(";")) continue;
+
     // Check if line starts with spaces (proper indentation)
     if (!lines[i + 1].startsWith("    ") && !lines[i + 1].startsWith("\t")) {
       result.isValid = false;
@@ -288,6 +291,9 @@ function validateTransactionBalance(content: string): ValidationResult {
   for (const line of accountLines) {
     const trimmed = line.trim();
     if (trimmed.length === 0) continue;
+
+    // Skip comment lines (lines starting with semicolon)
+    if (trimmed.startsWith(";")) continue;
 
     // Parse the line
     const match = trimmed.match(
