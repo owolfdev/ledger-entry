@@ -18,6 +18,7 @@ interface TerminalPanelProps {
   setLogs: (logs: LogMessage[]) => void;
   formatLogMessage: (log: LogMessage) => React.ReactNode;
   message: string;
+  messageType: "info" | "success" | "warning" | "error";
   isExecutingCommand: boolean;
 }
 
@@ -32,6 +33,7 @@ export function TerminalPanel({
   setLogs,
   formatLogMessage,
   message,
+  messageType,
   isExecutingCommand,
 }: TerminalPanelProps) {
   return (
@@ -105,8 +107,28 @@ export function TerminalPanel({
       {/* Message Area - Bottom */}
       <div className="min-h-12 border-t border-border bg-card flex-shrink-0">
         <div className="p-2 flex items-center gap-2">
-          <div className="w-2 h-2 rounded-full bg-muted-foreground" />
-          <span className="text-xs font-mono text-muted-foreground">
+          <div
+            className={`w-2 h-2 rounded-full ${
+              messageType === "success"
+                ? "bg-green-500"
+                : messageType === "error"
+                ? "bg-red-500"
+                : messageType === "warning"
+                ? "bg-yellow-500"
+                : "bg-muted-foreground"
+            }`}
+          />
+          <span
+            className={`text-xs font-mono ${
+              messageType === "success"
+                ? "text-green-400"
+                : messageType === "error"
+                ? "text-red-400"
+                : messageType === "warning"
+                ? "text-yellow-400"
+                : "text-muted-foreground"
+            }`}
+          >
             {message}
           </span>
         </div>

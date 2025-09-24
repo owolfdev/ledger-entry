@@ -125,7 +125,9 @@ function parseCommandText(text: string): ParsedAddCommand {
   // Parse items (what's left)
   const items = parseItems(remaining);
   if (items.length === 0) {
-    throw new Error("No valid items found");
+    throw new Error(
+      `No valid items found. Each item must include a name and amount (e.g., "coffee 10" or "coffee 10 THB"). Remaining text: "${remaining}"`
+    );
   }
 
   result.items = items;

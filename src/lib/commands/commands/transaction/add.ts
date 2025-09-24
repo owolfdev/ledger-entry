@@ -174,6 +174,9 @@ export const addCommand: Command = {
         "💡 Edit the entry in the input field if needed, then press Enter to save it to your repository."
       );
 
+      // Update message area with success
+      context.updateMessage("Ledger entry generated successfully!", "success");
+
       // Store the generated entry in the command context for potential use
       // The user will manually copy/edit this and press Enter to save
 
@@ -203,6 +206,12 @@ export const addCommand: Command = {
       context.logger.addLog(
         "error",
         `❌ Failed to process add command: ${errorMessage}`
+      );
+
+      // Update message area with error
+      context.updateMessage(
+        `Failed to process add command: ${errorMessage}`,
+        "error"
       );
 
       return {

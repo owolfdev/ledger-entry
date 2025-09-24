@@ -74,9 +74,9 @@ export default function LedgerInterface() {
   const [message, setMessage] = useState(
     "Type 'help' to see available commands"
   );
-  const [, setMessageType] = useState<"info" | "success" | "warning" | "error">(
-    "info"
-  );
+  const [messageType, setMessageType] = useState<
+    "info" | "success" | "warning" | "error"
+  >("info");
 
   // Confirmation prompt state
   const [confirmationPrompt, setConfirmationPrompt] = useState<{
@@ -990,6 +990,7 @@ export default function LedgerInterface() {
                 setLogs={setLogs}
                 formatLogMessage={formatLogMessage}
                 message={message}
+                messageType={messageType}
                 isExecutingCommand={isExecutingCommand}
               />
             </Panel>
@@ -1046,6 +1047,7 @@ export default function LedgerInterface() {
               setLogs={setLogs}
               formatLogMessage={formatLogMessage}
               message={message}
+              messageType={messageType}
               isExecutingCommand={isExecutingCommand}
             />
           </div>
