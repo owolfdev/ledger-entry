@@ -4,6 +4,7 @@ features to complete for mvp:
 2. proper chart of accounts
 3. rules templates
 4. docs
+5. educational system.
 
 features to add in future:
 
