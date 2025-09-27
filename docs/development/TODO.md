@@ -1,6 +1,6 @@
 features to complete for mvp:
 
-1. new commands balance, register.
+1. new commands balance, register. continue.
 2. fix input so it's auto focused.
    2b. fix the terminal so it doesnt auto scroll always (like when one wants to scroll to read. it should only auto scroll after an command is returned output to the terminal.)
 3. new command prices.
