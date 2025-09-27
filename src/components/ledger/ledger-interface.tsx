@@ -553,32 +553,32 @@ export default function LedgerInterface() {
 
   // Load rules when repository is connected
   useEffect(() => {
-    console.log("🔍 Rules useEffect triggered, repository:", repository);
-    console.log(
-      "🔍 Repository owner:",
-      repository?.owner,
-      "repo:",
-      repository?.repo
-    );
+    // console.log("🔍 Rules useEffect triggered, repository:", repository);
+    // console.log(
+    //   "🔍 Repository owner:",
+    //   repository?.owner,
+    //   "repo:",
+    //   repository?.repo
+    // );
     const loadRules = async () => {
       if (!repository) {
-        console.log("🔍 No repository, returning");
+        // console.log("🔍 No repository, returning");
         return;
       }
 
       const repoKey = `${repository.owner}/${repository.repo}`;
-      console.log(
-        "🔍 Checking if rules already loaded for:",
-        repoKey,
-        "Current:",
-        rulesLoadedRef.current
-      );
+      // console.log(
+      //   "🔍 Checking if rules already loaded for:",
+      //   repoKey,
+      //   "Current:",
+      //   rulesLoadedRef.current
+      // );
       if (rulesLoadedRef.current === repoKey) {
-        console.log("🔍 Rules already loaded, skipping");
+        // console.log("🔍 Rules already loaded, skipping");
         return;
       }
 
-      console.log("🔍 Setting rules loaded ref to:", repoKey);
+      // console.log("🔍 Setting rules loaded ref to:", repoKey);
       rulesLoadedRef.current = repoKey;
 
       // Add loading message with specific ID
@@ -589,20 +589,20 @@ export default function LedgerInterface() {
         message: "📋 Loading rules and accounts from repository",
         timestamp: new Date(),
       };
-      console.log("🔍 Adding loading message with ID:", loadingLogId);
+      // console.log("🔍 Adding loading message with ID:", loadingLogId);
       setLogs((prev) => {
-        console.log("🔍 Current logs before adding loading:", prev.length);
+        // console.log("🔍 Current logs before adding loading:", prev.length);
         // Check if there are already loading messages
         const existingLoadingLogs = prev.filter(
           (log) =>
             log.type === "loading" &&
             log.message.includes("Loading rules and accounts")
         );
-        console.log("🔍 Existing loading logs:", existingLoadingLogs.length);
+        // console.log("🔍 Existing loading logs:", existingLoadingLogs.length);
         if (existingLoadingLogs.length > 0) {
-          console.log(
-            "🔍 WARNING: Found existing loading logs, removing them first"
-          );
+          // console.log(
+          //   "🔍 WARNING: Found existing loading logs, removing them first"
+          // );
           const filtered = prev.filter(
             (log) =>
               !(
@@ -611,14 +611,14 @@ export default function LedgerInterface() {
               )
           );
           const newLogs = [...filtered, loadingLog];
-          console.log(
-            "🔍 New logs after removing existing and adding new loading:",
-            newLogs.length
-          );
+          // console.log(
+          //   "🔍 New logs after removing existing and adding new loading:",
+          //   newLogs.length
+          // );
           return newLogs;
         }
         const newLogs = [...prev, loadingLog];
-        console.log("🔍 New logs after adding loading:", newLogs.length);
+        // console.log("🔍 New logs after adding loading:", newLogs.length);
         return newLogs;
       });
 
@@ -634,15 +634,15 @@ export default function LedgerInterface() {
         });
 
         // Remove loading message and add success
-        console.log("🔍 Removing loading message with ID:", loadingLogId);
+        // console.log("🔍 Removing loading message with ID:", loadingLogId);
         setLogs((prev) => {
           const filtered = prev.filter((log) => log.id !== loadingLogId);
-          console.log(
-            "🔍 Filtered logs count:",
-            filtered.length,
-            "Original count:",
-            prev.length
-          );
+          // console.log(
+          //   "🔍 Filtered logs count:",
+          //   filtered.length,
+          //   "Original count:",
+          //   prev.length
+          // );
           // Add success message directly to the filtered logs
           const successLog: LogMessage = {
             id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,

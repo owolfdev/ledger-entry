@@ -311,11 +311,11 @@ export async function autoAppendLedgerEntry(
                       "info",
                       `🔄 Rules cache invalidated - new rule is now active!`
                     );
-                  } catch (error) {
-                    console.warn(
-                      "Failed to invalidate rules cache after learning:",
-                      error
-                    );
+                  } catch (_error) {
+                    // console.warn(
+                    //   "Failed to invalidate rules cache after learning:",
+                    //   error
+                    // );
                     context.logger.addLog(
                       "warning",
                       `⚠️ New rule saved but cache not refreshed - restart may be needed`
@@ -341,8 +341,8 @@ export async function autoAppendLedgerEntry(
           // Don't show messages for old commands - just silently skip
         }
         // Don't show messages when there's no context - just silently skip
-      } catch (error) {
-        console.warn("Learning system error:", error);
+      } catch (_error) {
+        // console.warn("Learning system error:", error);
         context.logger.addLog("error", "❌ Learning system error");
       }
     }
@@ -354,8 +354,8 @@ export async function autoAppendLedgerEntry(
           "./natural-language/rules-engine"
         );
         invalidateRulesCache(context.repository.owner, context.repository.repo);
-      } catch (error) {
-        console.warn("Failed to invalidate rules cache:", error);
+      } catch (_error) {
+        // console.warn("Failed to invalidate rules cache:", error);
       }
     }
 
@@ -386,9 +386,9 @@ export async function autoAppendLedgerEntry(
       journalFile,
       created: !fileExists,
     };
-  } catch (error) {
+  } catch (_error) {
     const errorMessage =
-      error instanceof Error ? error.message : "Failed to append entry";
+      _error instanceof Error ? _error.message : "Failed to append entry";
     context.logger.addLog(
       "error",
       `❌ Failed to append entry: ${errorMessage}`
@@ -445,11 +445,11 @@ async function refreshRepositoryItems(context: CommandContext): Promise<void> {
         `   → Repository refresh callback not available`
       );
     }
-  } catch (error) {
+  } catch (_error) {
     context.logger.addLog(
       "warning",
       `   → Failed to refresh repository items: ${
-        error instanceof Error ? error.message : "Unknown error"
+        _error instanceof Error ? _error.message : "Unknown error"
       }`
     );
   }
@@ -469,11 +469,11 @@ async function refreshCurrentFile(
     await context.fileOperations.loadFile(journalFile);
 
     context.logger.addLog("info", `   → Editor content refreshed`);
-  } catch (error) {
+  } catch (_error) {
     context.logger.addLog(
       "warning",
       `   → Failed to refresh editor content: ${
-        error instanceof Error ? error.message : "Unknown error"
+        _error instanceof Error ? _error.message : "Unknown error"
       }`
     );
   }
@@ -565,9 +565,9 @@ async function updateMainJournal(
       "success",
       `✅ Updated main.journal to include ${journalFile}`
     );
-  } catch (error) {
+  } catch (_error) {
     const errorMessage =
-      error instanceof Error ? error.message : "Unknown error";
+      _error instanceof Error ? _error.message : "Unknown error";
     context.logger.addLog(
       "error",
       `⚠️ Failed to update main.journal: ${errorMessage}`

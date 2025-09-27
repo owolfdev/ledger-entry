@@ -59,7 +59,7 @@ export function RepoSelection({ onRepoConnected }: RepoSelectionProps) {
       const data = await response.json();
       setRepos(data.repos);
     } catch (err) {
-      console.error("Error fetching repositories:", err);
+      // console.error("Error fetching repositories:", err);
       setError(err instanceof Error ? err.message : "Unknown error");
     } finally {
       setIsLoading(false);
@@ -90,7 +90,7 @@ export function RepoSelection({ onRepoConnected }: RepoSelectionProps) {
       // Notify parent component
       onRepoConnected?.(repo);
     } catch (err) {
-      console.error("Error connecting repository:", err);
+      // console.error("Error connecting repository:", err);
       setError(err instanceof Error ? err.message : "Unknown error");
     } finally {
       // Connection completed
@@ -173,7 +173,7 @@ export function RepoSelection({ onRepoConnected }: RepoSelectionProps) {
       setSelectedRepo(updatedRepo);
       setMode("scanning");
     } catch (err) {
-      console.error("Error checking repository compatibility:", err);
+      // console.error("Error checking repository compatibility:", err);
       setError(err instanceof Error ? err.message : "Unknown error");
     } finally {
       setIsLoading(false);
@@ -211,7 +211,7 @@ export function RepoSelection({ onRepoConnected }: RepoSelectionProps) {
       setSelectedRepo(mockRepo);
       setMode("scanning");
     } catch (err) {
-      console.error("Error with manual repo:", err);
+      // console.error("Error with manual repo:", err);
       setError(err instanceof Error ? err.message : "Unknown error");
     } finally {
       setIsLoading(false);

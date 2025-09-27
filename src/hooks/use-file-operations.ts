@@ -85,11 +85,11 @@ export function useFileOperations({ owner, repo }: UseFileOperationsProps) {
               "@/lib/commands/natural-language/rules-engine"
             );
             invalidateRulesCache(owner, repo);
-            console.log(
-              `🗑️ Rules cache invalidated due to ${currentFile.path} save`
-            );
-          } catch (error) {
-            console.warn("Failed to invalidate rules cache:", error);
+            // console.log(
+            //   `🗑️ Rules cache invalidated due to ${currentFile.path} save`
+            // );
+          } catch (_error) {
+            // console.warn("Failed to invalidate rules cache:", error);
           }
         }
       } catch (err) {

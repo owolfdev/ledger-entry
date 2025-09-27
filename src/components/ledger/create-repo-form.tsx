@@ -79,7 +79,7 @@ export function CreateRepoForm({
       const result = await response.json();
       onRepoCreated?.(result.repository);
     } catch (err) {
-      console.error("Error creating repository:", err);
+      // console.error("Error creating repository:", err);
       setError(err instanceof Error ? err.message : "Unknown error");
     } finally {
       setIsCreating(false);

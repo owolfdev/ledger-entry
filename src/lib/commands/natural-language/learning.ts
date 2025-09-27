@@ -97,15 +97,15 @@ export async function loadLearnedRules(
     );
 
     if (!response.ok) {
-      console.log("No learned rules file found, starting fresh");
+      // console.log("No learned rules file found, starting fresh");
       return [];
     }
 
     const data = await response.json();
     const ruleSet = JSON.parse(data.content);
     return ruleSet.items || [];
-  } catch (error) {
-    console.warn("Failed to load learned rules:", error);
+  } catch (_error) {
+    // console.warn("Failed to load learned rules:", error);
     return [];
   }
 }
@@ -191,13 +191,13 @@ export async function learnFromCorrection(
     try {
       const { invalidateRulesCache } = await import("./rules-engine");
       invalidateRulesCache(owner, repo);
-    } catch (error) {
-      console.warn("Failed to invalidate rules cache after learning:", error);
+    } catch (_error) {
+      // console.warn("Failed to invalidate rules cache after learning:", error);
     }
 
     return true;
-  } catch (error) {
-    console.error("Failed to learn from correction:", error);
+  } catch (_error) {
+    // console.error("Failed to learn from correction:", error);
     return false;
   }
 }

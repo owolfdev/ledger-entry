@@ -134,7 +134,7 @@ export async function initializeLedgerStructure(
 
     result.createdFolders.push("journals/", "rules/");
   } catch (error) {
-    console.error("Error initializing ledger structure:", error);
+    // console.error("Error initializing ledger structure:", error);
     result.success = false;
     result.errors.push(
       error instanceof Error ? error.message : "Unknown error"
@@ -262,7 +262,7 @@ export async function addMissingFiles(
       }
     }
   } catch (error) {
-    console.error("Error adding missing files:", error);
+    // console.error("Error adding missing files:", error);
     result.success = false;
     result.errors.push(
       error instanceof Error ? error.message : "Unknown error"

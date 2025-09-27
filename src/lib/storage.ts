@@ -24,8 +24,8 @@ export function saveLastLoadedFile(fileInfo: StoredFileInfo): void {
       STORAGE_KEYS.LAST_LOADED_FILE,
       JSON.stringify(fileInfo)
     );
-  } catch (error) {
-    console.warn("Failed to save last loaded file to localStorage:", error);
+  } catch (_error) {
+    // console.warn("Failed to save last loaded file to localStorage:", error);
   }
 }
 
@@ -50,8 +50,8 @@ export function getLastLoadedFile(): StoredFileInfo | null {
     }
 
     return fileInfo;
-  } catch (error) {
-    console.warn("Failed to get last loaded file from localStorage:", error);
+  } catch (_error) {
+    // console.warn("Failed to get last loaded file from localStorage:", error);
     return null;
   }
 }
@@ -64,7 +64,7 @@ export function clearLastLoadedFile(): void {
 
   try {
     localStorage.removeItem(STORAGE_KEYS.LAST_LOADED_FILE);
-  } catch (error) {
-    console.warn("Failed to clear last loaded file from localStorage:", error);
+  } catch (_error) {
+    // console.warn("Failed to clear last loaded file from localStorage:", error);
   }
 }

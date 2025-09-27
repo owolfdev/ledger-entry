@@ -88,8 +88,8 @@ export async function scanLedgerStructure(
       missingFiles,
       missingFolders,
     };
-  } catch (error) {
-    console.error(`Error scanning repo ${owner}/${repo}:`, error);
+  } catch (_error) {
+    // console.error(`Error scanning repo ${owner}/${repo}:`, error);
     return {
       hasMainJournal: false,
       hasAccountsJournal: false,
@@ -109,22 +109,22 @@ export async function scanUserRepositories(
   githubClient: GitHubClient
 ): Promise<RepoInfo[]> {
   try {
-    console.log("Starting repository scan...");
+    // console.log("Starting repository scan...");
     const repos = await githubClient.getUserRepositories();
-    console.log(`Found ${repos.length} repositories to scan`);
+    // console.log(`Found ${repos.length} repositories to scan`);
 
     // Limit scanning to first 20 repos to avoid rate limits
     const reposToScan = repos.slice(0, 20);
-    console.log(
-      `Scanning ${reposToScan.length} repositories (limited to avoid rate limits)`
-    );
+    // console.log(
+    //   `Scanning ${reposToScan.length} repositories (limited to avoid rate limits)`
+    // );
 
     // Scan each repo for ledger structure
     const reposWithStructure = await Promise.all(
-      reposToScan.map(async (repo, index) => {
-        console.log(
-          `Scanning repo ${index + 1}/${reposToScan.length}: ${repo.name}`
-        );
+      reposToScan.map(async (repo, _index) => {
+        // console.log(
+        //   `Scanning repo ${index + 1}/${reposToScan.length}: ${repo.name}`
+        // );
         const [owner, repoName] = repo.full_name.split("/");
         const ledgerStructure = await scanLedgerStructure(
           githubClient,
@@ -154,10 +154,10 @@ export async function scanUserRepositories(
     }));
 
     const allRepos = [...reposWithStructure, ...remainingRepos];
-    console.log(`Repository scan complete: ${allRepos.length} total repos`);
+    // console.log(`Repository scan complete: ${allRepos.length} total repos`);
     return allRepos;
-  } catch (error) {
-    console.error("Error scanning user repositories:", error);
+  } catch (_error) {
+    // console.error("Error scanning user repositories:", error);
     return [];
   }
 }

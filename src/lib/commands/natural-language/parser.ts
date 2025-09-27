@@ -239,15 +239,15 @@ export function testParser() {
     "add gas 50 @ Shell with cash",
   ];
 
-  console.log("Testing Natural Language Parser:");
+  // // console.log("Testing Natural Language Parser:");
   for (const test of testCases) {
     const result = parseAddCommand(test);
-    console.log(`Input: "${test}"`);
+    // console.log(`Input: "${test}"`);
     if (result.success) {
-      console.log("✓ Success:", JSON.stringify(result.data, null, 2));
+      // console.log("✓ Success:", JSON.stringify(result.data, null, 2));
     } else {
-      console.log("✗ Error:", result.error.message);
+      // console.log("✗ Error:", result.error.message);
     }
-    console.log("---");
+    // console.log("---");
   }
 }

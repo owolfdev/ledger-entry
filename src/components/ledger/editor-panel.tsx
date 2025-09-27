@@ -137,8 +137,8 @@ export function EditorPanel({
     if (editorRef.current && window.monaco) {
       try {
         window.monaco.editor.setTheme(monacoTheme);
-      } catch (error) {
-        console.warn("Failed to update Monaco theme:", error);
+      } catch (_error) {
+        // console.warn("Failed to update Monaco theme:", error);
       }
     }
   }, [monacoTheme, editorRef]);
@@ -167,7 +167,7 @@ export function EditorPanel({
       setIsModified(false);
       addLog("success", `File saved: ${fileName}`);
       updateMessage("File saved successfully!", "success");
-    } catch (error) {
+    } catch (_error) {
       // Remove loading messages and add error
       setLogs((prev) =>
         prev.filter(
@@ -177,7 +177,7 @@ export function EditorPanel({
         )
       );
       const errorMessage =
-        error instanceof Error ? error.message : "Failed to save file";
+        _error instanceof Error ? _error.message : "Failed to save file";
       addLog("error", `Failed to save file: ${errorMessage}`);
       updateMessage("Failed to save file", "error");
     }
@@ -286,12 +286,12 @@ export function EditorPanel({
             setTimeout(() => {
               if (!vimModeEnabled) return;
 
-              console.log("Initializing monaco-vim...");
+              // console.log("Initializing monaco-vim...");
 
               // Create status bar element for Vim mode
               const vimStatusBar = document.getElementById("vim-status-bar");
               if (!vimStatusBar) {
-                console.error("Vim status bar element not found!");
+                // console.error("Vim status bar element not found!");
                 return;
               }
 
@@ -302,13 +302,13 @@ export function EditorPanel({
                     const vimMode = vim.initVimMode(editor, vimStatusBar);
                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     (vimModeRef as any).current = vimMode;
-                    console.log("monaco-vim initialized successfully!");
-                  } catch (error) {
-                    console.error("Failed to initialize monaco-vim:", error);
+                    // console.log("monaco-vim initialized successfully!");
+                  } catch (_error) {
+                    // console.error("Failed to initialize monaco-vim:", error);
                   }
                 })
-                .catch((error) => {
-                  console.error("Failed to load monaco-vim:", error);
+                .catch((_error) => {
+                  // console.error("Failed to load monaco-vim:", error);
                 });
             }, 500);
 
