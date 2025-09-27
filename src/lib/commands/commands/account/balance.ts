@@ -156,7 +156,7 @@ export const balanceCommand: Command = {
       );
 
       // Load rules and accounts (needed for processing)
-      const { rules, accounts } = await loadRules({
+      const { rules: _rules, accounts: _accounts } = await loadRules({
         owner: context.repository.owner,
         repo: context.repository.repo,
       });
@@ -178,7 +178,7 @@ export const balanceCommand: Command = {
             const transactions = parseTransactions(data.content);
             allTransactions.push(...transactions);
           }
-        } catch (error) {
+        } catch (_error) {
           // Silently continue on error
         }
       }
