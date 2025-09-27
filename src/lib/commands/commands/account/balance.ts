@@ -110,12 +110,17 @@ function filterBalancesByPattern(
   // Convert pattern to regex
   // Replace * with .* for wildcard matching
   // Replace : with \: to escape colons
-  const regexPattern = pattern
+  let regexPattern = pattern
     .replace(/\*/g, ".*")
     .replace(/:/g, "\\:")
     .toLowerCase();
 
-  const regex = new RegExp(`^${regexPattern}$`, "i");
+  // If pattern doesn't contain wildcards, make it a partial match
+  if (!pattern.includes("*")) {
+    regexPattern = `.*${regexPattern}.*`;
+  }
+
+  const regex = new RegExp(regexPattern, "i");
 
   return balances.filter((balance) => {
     const accountName = balance.account.toLowerCase();
