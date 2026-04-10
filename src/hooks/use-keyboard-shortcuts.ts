@@ -14,7 +14,7 @@ export function useKeyboardShortcuts() {
     }
     // Give layout a tick to render if it was hidden
     setTimeout(() => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+       
       const editorRef = (globalThis as any).currentEditorRef;
       if (editorRef?.current && typeof editorRef.current.focus === "function") {
         editorRef.current.focus();
@@ -29,7 +29,7 @@ export function useKeyboardShortcuts() {
       updateSettings({ showTerminal: true });
     }
     setTimeout(() => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+       
       const terminalInputRef = (globalThis as any).currentTerminalInputRef;
       if (terminalInputRef?.current) {
         terminalInputRef.current.focus();

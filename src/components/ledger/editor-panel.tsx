@@ -78,14 +78,14 @@ interface EditorPanelProps {
   isModified: boolean;
   ledgerContent: string;
   cursorPosition: { line: number; column: number };
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   editorRef: React.RefObject<any>;
   setLedgerContent: (content: string) => void;
   setIsModified: (modified: boolean) => void;
   setCursorPosition: (position: { line: number; column: number }) => void;
   isEditorLoading: boolean;
   setIsEditorLoading: (loading: boolean) => void;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   vimModeRef: React.RefObject<any>;
   vimModeEnabled: boolean;
   toggleVimMode: () => void;
@@ -300,7 +300,7 @@ export function EditorPanel({
                 .then((vim) => {
                   try {
                     const vimMode = vim.initVimMode(editor, vimStatusBar);
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                     
                     (vimModeRef as any).current = vimMode;
                     // console.log("monaco-vim initialized successfully!");
                   } catch (_error) {

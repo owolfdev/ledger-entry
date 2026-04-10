@@ -86,14 +86,14 @@ export default function LedgerInterface() {
 
   const commandInputRef = useRef<HTMLTextAreaElement>(null);
   const logsEndRef = useRef<HTMLDivElement>(null);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   const editorRef = useRef<any>(null);
 
   // Set up global refs for hooks to access
   useEffect(() => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     (globalThis as any).currentEditorRef = editorRef;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     (globalThis as any).currentTerminalInputRef = commandInputRef;
   }, []);
 

@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { Geist } from "next/font/google";
 import { ThemeProvider } from "next-themes";
 import { PWARegister } from "@/components/pwa-register";
 import { LayoutProvider } from "@/contexts/layout-context";
@@ -17,12 +16,6 @@ export const metadata: Metadata = {
     "A natural language interface for Ledger CLI with GitHub-backed storage",
 };
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  display: "swap",
-  subsets: ["latin"],
-});
-
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -38,9 +31,8 @@ export default function RootLayout({
           name="apple-mobile-web-app-status-bar-style"
           content="black-translucent"
         />
-        <link rel="apple-touch-icon" href="/icons/icon-192.png" />
       </head>
-      <body className={`${geistSans.className} antialiased h-full`}>
+      <body className="antialiased h-full">
         <ThemeProvider
           attribute="class"
           defaultTheme="system"

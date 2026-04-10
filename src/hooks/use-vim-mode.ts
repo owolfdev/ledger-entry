@@ -5,13 +5,13 @@ import { useLayout } from "@/contexts/layout-context";
 
 export function useVimMode() {
   const { vimModeEnabled, updateSettings } = useLayout();
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   const vimModeRef = useRef<any>(null);
 
   const toggleVimMode = useCallback(() => {
     // console.log("Toggle Vim mode clicked! Current state:", vimModeEnabled);
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     const editorRef = (globalThis as any).currentEditorRef;
     if (!editorRef?.current) {
       // console.log("No editor ref, cannot toggle");
