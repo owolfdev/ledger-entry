@@ -60,7 +60,10 @@ export type LedgerEntryRecord = {
   metadata: LedgerEntryMetadata;
   modelName: string;
   postings: StructuredPosting[];
+  reversalOfEntryId?: string | null;
+  reversedByEntryId?: string | null;
   sourcePrompt: string;
+  status: "confirmed" | "reversed";
 };
 
 export type JournalQueryFilters = {

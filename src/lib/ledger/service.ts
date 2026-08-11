@@ -1,3 +1,4 @@
+import { buildBeancountEntry } from "@/lib/ledger/preview";
 import { STARTER_LEDGER_TEMPLATES } from "@/lib/ledger/starter-ledgers";
 import type {
   LedgerAccount,
@@ -25,6 +26,9 @@ type LedgerEntryRow = {
   metadata: LedgerEntryRecord["metadata"] | null;
   model_name: string;
   postings: LedgerEntryRecord["postings"];
+  reversal_of_entry_id: string | null;
+  reversed_by_entry_id: string | null;
+  status: LedgerEntryRecord["status"];
   source_prompt: string;
 };
 
@@ -49,7 +53,10 @@ function mapLedgerEntry(row: LedgerEntryRow): LedgerEntryRecord {
     metadata: row.metadata ?? {},
     modelName: row.model_name,
     postings: row.postings,
+    reversalOfEntryId: row.reversal_of_entry_id,
+    reversedByEntryId: row.reversed_by_entry_id,
     sourcePrompt: row.source_prompt,
+    status: row.status,
   };
 }
 
@@ -240,9 +247,10 @@ export async function deleteLedgerAccount(params: {
   }
 }
 
-export async function createLedgerEntry(params: {
+async function insertLedgerEntry(params: {
   entry: StructuredLedgerEntry;
   ledgerId: string;
+  reversalOfEntryId?: string | null;
   modelName: string;
   sourcePrompt: string;
   userId: string;
@@ -261,9 +269,11 @@ export async function createLedgerEntry(params: {
       metadata: params.entry.metadata ?? {},
       model_name: params.modelName,
       postings: params.entry.postings,
+      reversal_of_entry_id: params.reversalOfEntryId ?? null,
       source_prompt: params.sourcePrompt,
+      status: "confirmed",
     })
-    .select("id, created_at")
+    .select("id, created_at, reversal_of_entry_id")
     .single();
 
   if (error) {
@@ -290,6 +300,17 @@ export async function createLedgerEntry(params: {
   }
 
   return data;
+}
+
+export async function createLedgerEntry(params: {
+  entry: StructuredLedgerEntry;
+  ledgerId: string;
+  modelName: string;
+  sourcePrompt: string;
+  userId: string;
+  beancountText: string;
+}) {
+  return insertLedgerEntry(params);
 }
 
 export async function getLedgerEntries(ledgerId: string, accountName?: string) {
@@ -319,7 +340,7 @@ export async function getLedgerEntries(ledgerId: string, accountName?: string) {
   const query = supabase
     .from("ledger_entries")
     .select(
-      "id, entry_date, description, currency, postings, metadata, beancount_text, model_name, source_prompt, created_at",
+      "id, entry_date, description, currency, postings, metadata, beancount_text, model_name, source_prompt, created_at, status, reversal_of_entry_id, reversed_by_entry_id",
     )
     .eq("ledger_id", ledgerId)
     .order("entry_date", { ascending: false })
@@ -332,4 +353,93 @@ export async function getLedgerEntries(ledgerId: string, accountName?: string) {
   }
 
   return (data as LedgerEntryRow[]).map(mapLedgerEntry);
+}
+
+export async function getLedgerEntryById(entryId: string) {
+  const supabase = createAdminClient();
+  const { data, error } = await supabase
+    .from("ledger_entries")
+    .select(
+      "id, ledger_id, entry_date, description, currency, postings, metadata, beancount_text, model_name, source_prompt, created_at, status, reversal_of_entry_id, reversed_by_entry_id, created_by_user_id",
+    )
+    .eq("id", entryId)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(`Failed to load ledger entry: ${error.message}`);
+  }
+
+  return data;
+}
+
+export async function reverseLedgerEntry(params: {
+  entryId: string;
+  userId: string;
+}) {
+  const supabase = createAdminClient();
+  const originalEntry = await getLedgerEntryById(params.entryId);
+
+  if (!originalEntry) {
+    throw new Error("Ledger entry not found.");
+  }
+
+  if (originalEntry.status === "reversed") {
+    throw new Error("This entry has already been reversed.");
+  }
+
+  if (originalEntry.reversal_of_entry_id) {
+    throw new Error("Reversal entries cannot be reversed again.");
+  }
+
+  const reversedEntry = await insertLedgerEntry({
+    entry: {
+      currency: originalEntry.currency,
+      description: `Reversal of ${originalEntry.description}`,
+      entryDate: new Date().toISOString().slice(0, 10),
+      metadata: {
+        ...((originalEntry.metadata as LedgerEntryRecord["metadata"]) ?? {}),
+        notes: `Reversal of entry ${originalEntry.id}`,
+      },
+      postings: (originalEntry.postings as LedgerEntryRecord["postings"]).map(
+        (posting) => ({
+          account: posting.account,
+          amount: posting.amount * -1,
+        }),
+      ),
+    },
+    beancountText: buildBeancountEntry({
+      currency: originalEntry.currency,
+      description: `Reversal of ${originalEntry.description}`,
+      entryDate: new Date().toISOString().slice(0, 10),
+      metadata: {
+        ...((originalEntry.metadata as LedgerEntryRecord["metadata"]) ?? {}),
+        notes: `Reversal of entry ${originalEntry.id}`,
+      },
+      postings: (originalEntry.postings as LedgerEntryRecord["postings"]).map(
+        (posting) => ({
+          account: posting.account,
+          amount: posting.amount * -1,
+        }),
+      ),
+    }),
+    ledgerId: originalEntry.ledger_id,
+    modelName: "manual-reversal",
+    reversalOfEntryId: originalEntry.id,
+    sourcePrompt: `Reversal of entry ${originalEntry.id}`,
+    userId: params.userId,
+  });
+
+  const { error: updateError } = await supabase
+    .from("ledger_entries")
+    .update({
+      reversed_by_entry_id: reversedEntry.id,
+      status: "reversed",
+    })
+    .eq("id", originalEntry.id);
+
+  if (updateError) {
+    throw new Error(`Failed to mark entry as reversed: ${updateError.message}`);
+  }
+
+  return reversedEntry;
 }
