@@ -254,6 +254,8 @@ export function AccountsSettingsScreen({
                     const nextLedgerId = event.target.value;
                     setSelectedLedgerId(nextLedgerId);
                     void persistSelectedLedger(nextLedgerId);
+                    setForm(EMPTY_FORM);
+                    setEditingAccountId(null);
                   }}
                   className="w-full rounded-2xl border border-white/10 bg-zinc-950 px-4 py-3 text-sm text-white outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/60"
                 >

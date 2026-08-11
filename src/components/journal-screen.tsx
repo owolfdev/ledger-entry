@@ -384,75 +384,92 @@ export function JournalScreen({
         ) : (
           <div className="space-y-4">
             {filteredEntries.map((entry) => (
-              <article
+              <details
                 key={entry.id}
-                className="rounded-3xl border border-white/10 bg-white/5 p-5"
+                className="rounded-3xl border border-white/10 bg-white/5"
               >
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                  <div>
-                    <p className="text-xs uppercase tracking-[0.2em] text-cyan-300">
-                      {entry.entryDate}
+                <summary className="cursor-pointer list-none px-5 py-4">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="min-w-0">
+                      <p className="text-xs uppercase tracking-[0.2em] text-cyan-300">
+                        {entry.entryDate}
+                      </p>
+                      <h2 className="mt-1 truncate text-base font-semibold text-white">
+                        {entry.description}
+                      </h2>
+                      <p className="mt-1 text-sm text-zinc-400">
+                        {formatMetadataValue(entry.metadata.vendorName)} · {entry.currency}
+                      </p>
+                    </div>
+                    <div className="text-sm text-zinc-300 sm:text-right">
+                      <p>
+                        {Math.max(
+                          ...entry.postings.map((posting) => Math.abs(posting.amount)),
+                        ).toFixed(2)}{" "}
+                        {entry.currency}
+                      </p>
+                      <p className="text-xs text-zinc-500">{entry.modelName}</p>
+                    </div>
+                  </div>
+                </summary>
+
+                <div className="border-t border-white/10 px-5 pb-5 pt-4">
+                  <div className="grid gap-3 rounded-2xl border border-white/10 bg-zinc-950/40 p-4 text-sm text-zinc-300 sm:grid-cols-2 lg:grid-cols-4">
+                    <div>
+                      <p className="text-xs uppercase tracking-[0.2em] text-zinc-500">
+                        Vendor
+                      </p>
+                      <p>{formatMetadataValue(entry.metadata.vendorName)}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs uppercase tracking-[0.2em] text-zinc-500">
+                        Payment Method
+                      </p>
+                      <p>{formatMetadataValue(entry.metadata.paymentMethod)}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs uppercase tracking-[0.2em] text-zinc-500">
+                        Reference
+                      </p>
+                      <p>{formatMetadataValue(entry.metadata.reference)}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs uppercase tracking-[0.2em] text-zinc-500">
+                        Notes
+                      </p>
+                      <p>{formatMetadataValue(entry.metadata.notes)}</p>
+                    </div>
+                  </div>
+
+                  <div className="mt-4 rounded-2xl border border-white/10 bg-zinc-950/40 p-4">
+                    <p className="mb-3 text-xs uppercase tracking-[0.2em] text-zinc-500">
+                      Postings
                     </p>
-                    <h2 className="mt-2 text-lg font-semibold text-white">
-                      {entry.description}
-                    </h2>
-                    <p className="mt-1 text-sm text-zinc-400">
-                      {entry.currency} · {entry.modelName}
+                    <div className="space-y-2 text-sm text-zinc-200">
+                      {entry.postings.map((posting, index) => (
+                        <div
+                          key={`${entry.id}-${posting.account}-${index}`}
+                          className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between"
+                        >
+                          <span>{posting.account}</span>
+                          <span>
+                            {posting.amount.toFixed(2)} {entry.currency}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="mt-4 rounded-2xl border border-white/10 bg-zinc-950/40 p-4">
+                    <p className="mb-3 text-xs uppercase tracking-[0.2em] text-zinc-500">
+                      Beancount text
                     </p>
+                    <pre className="overflow-x-auto text-sm leading-7 text-zinc-300">
+                      <code>{entry.beancountText}</code>
+                    </pre>
                   </div>
                 </div>
-
-                <div className="mt-4 grid gap-3 rounded-2xl border border-white/10 bg-zinc-950/40 p-4 text-sm text-zinc-300 sm:grid-cols-2 lg:grid-cols-4">
-                  <div>
-                    <p className="text-xs uppercase tracking-[0.2em] text-zinc-500">Vendor</p>
-                    <p>{formatMetadataValue(entry.metadata.vendorName)}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs uppercase tracking-[0.2em] text-zinc-500">
-                      Payment Method
-                    </p>
-                    <p>{formatMetadataValue(entry.metadata.paymentMethod)}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs uppercase tracking-[0.2em] text-zinc-500">
-                      Reference
-                    </p>
-                    <p>{formatMetadataValue(entry.metadata.reference)}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs uppercase tracking-[0.2em] text-zinc-500">Notes</p>
-                    <p>{formatMetadataValue(entry.metadata.notes)}</p>
-                  </div>
-                </div>
-
-                <div className="mt-4 rounded-2xl border border-white/10 bg-zinc-950/40 p-4">
-                  <p className="mb-3 text-xs uppercase tracking-[0.2em] text-zinc-500">
-                    Postings
-                  </p>
-                  <div className="space-y-2 text-sm text-zinc-200">
-                    {entry.postings.map((posting, index) => (
-                      <div
-                        key={`${entry.id}-${posting.account}-${index}`}
-                        className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between"
-                      >
-                        <span>{posting.account}</span>
-                        <span>
-                          {posting.amount.toFixed(2)} {entry.currency}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <details className="mt-4 rounded-2xl border border-white/10 bg-zinc-950/40 p-4">
-                  <summary className="cursor-pointer text-sm font-medium text-zinc-200">
-                    Beancount text
-                  </summary>
-                  <pre className="mt-3 overflow-x-auto text-sm leading-7 text-zinc-300">
-                    <code>{entry.beancountText}</code>
-                  </pre>
-                </details>
-              </article>
+              </details>
             ))}
           </div>
         )}
