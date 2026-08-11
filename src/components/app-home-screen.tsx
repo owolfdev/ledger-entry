@@ -4,6 +4,7 @@ import Link from "next/link";
 import { ArrowUp, Check, LoaderCircle, RotateCcw } from "lucide-react";
 import { useState, type FormEvent } from "react";
 
+import { persistSelectedLedger } from "@/lib/ledger/persist-selected-ledger";
 import { SignOutButton } from "@/components/sign-out-button";
 import type { LedgerEntryPreview, LedgerSummary } from "@/lib/ledger/types";
 import { Button } from "@/components/ui/button";
@@ -198,7 +199,11 @@ export function AppHomeScreen({ ledgers }: AppHomeScreenProps) {
           <div className="px-3 pb-3">
             <select
               value={selectedLedgerId}
-              onChange={(event) => setSelectedLedgerId(event.target.value)}
+              onChange={(event) => {
+                const nextLedgerId = event.target.value;
+                setSelectedLedgerId(nextLedgerId);
+                void persistSelectedLedger(nextLedgerId);
+              }}
               className="w-full rounded-2xl border border-white/10 bg-zinc-950 px-4 py-3 text-sm text-white outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/60"
             >
               {ledgers.map((ledger) => (

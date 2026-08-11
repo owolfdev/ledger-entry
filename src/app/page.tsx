@@ -1,6 +1,10 @@
 import { redirect } from "next/navigation";
 
 import { AppHomeScreen } from "@/components/app-home-screen";
+import {
+  getSelectedLedgerIdFromCookie,
+  prioritizeSelectedLedger,
+} from "@/lib/ledger/selected-ledger";
 import { ensureStarterLedgersForUser } from "@/lib/ledger/service";
 import { hasSupabaseEnv } from "@/lib/supabase/env";
 import { createClient } from "@/lib/supabase/server";
@@ -19,7 +23,11 @@ export default async function Home() {
     redirect("/login?next=/");
   }
 
-  const ledgers = await ensureStarterLedgersForUser(user.id);
+  const selectedLedgerId = await getSelectedLedgerIdFromCookie();
+  const ledgers = prioritizeSelectedLedger(
+    await ensureStarterLedgersForUser(user.id),
+    selectedLedgerId,
+  );
 
   return <AppHomeScreen ledgers={ledgers} />;
 }

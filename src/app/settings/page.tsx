@@ -1,6 +1,10 @@
 import { redirect } from "next/navigation";
 
 import { SettingsScreen } from "@/components/settings-screen";
+import {
+  getSelectedLedgerIdFromCookie,
+  prioritizeSelectedLedger,
+} from "@/lib/ledger/selected-ledger";
 import { ensureStarterLedgersForUser } from "@/lib/ledger/service";
 import { hasSupabaseEnv } from "@/lib/supabase/env";
 import { createClient } from "@/lib/supabase/server";
@@ -19,7 +23,11 @@ export default async function SettingsPage() {
     redirect("/login?next=/settings");
   }
 
-  const ledgers = await ensureStarterLedgersForUser(user.id);
+  const selectedLedgerId = await getSelectedLedgerIdFromCookie();
+  const ledgers = prioritizeSelectedLedger(
+    await ensureStarterLedgersForUser(user.id),
+    selectedLedgerId,
+  );
 
   return <SettingsScreen ledgers={ledgers} />;
 }

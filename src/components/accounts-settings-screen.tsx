@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Pencil, Plus, Save, Trash2, X } from "lucide-react";
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 
+import { persistSelectedLedger } from "@/lib/ledger/persist-selected-ledger";
 import { SignOutButton } from "@/components/sign-out-button";
 import { Button } from "@/components/ui/button";
 import type {
@@ -249,7 +250,11 @@ export function AccountsSettingsScreen({
                 </label>
                 <select
                   value={selectedLedgerId}
-                  onChange={(event) => setSelectedLedgerId(event.target.value)}
+                  onChange={(event) => {
+                    const nextLedgerId = event.target.value;
+                    setSelectedLedgerId(nextLedgerId);
+                    void persistSelectedLedger(nextLedgerId);
+                  }}
                   className="w-full rounded-2xl border border-white/10 bg-zinc-950 px-4 py-3 text-sm text-white outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/60"
                 >
                   {ledgers.map((ledger) => (

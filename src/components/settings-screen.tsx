@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Save, Settings2 } from "lucide-react";
 import { useMemo, useState } from "react";
 
+import { persistSelectedLedger } from "@/lib/ledger/persist-selected-ledger";
 import { SignOutButton } from "@/components/sign-out-button";
 import { Button } from "@/components/ui/button";
 import type { LedgerSummary } from "@/lib/ledger/types";
@@ -27,6 +28,7 @@ export function SettingsScreen({ ledgers }: SettingsScreenProps) {
 
   function handleLedgerChange(nextLedgerId: string) {
     setSelectedLedgerId(nextLedgerId);
+    void persistSelectedLedger(nextLedgerId);
 
     const nextLedger = ledgerList.find((ledger) => ledger.id === nextLedgerId);
     setCurrency(nextLedger?.defaultCurrency ?? "");
