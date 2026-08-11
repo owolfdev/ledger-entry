@@ -18,6 +18,7 @@ export type LedgerSummary = {
 export type LedgerAccount = {
   category: AccountCategory;
   description?: string | null;
+  id?: string;
   name: string;
 };
 
@@ -47,4 +48,27 @@ export type LedgerEntryPreview = {
   ledger: LedgerSummary;
   model: string;
   sourcePrompt: string;
+};
+
+export type LedgerEntryRecord = {
+  beancountText: string;
+  createdAt: string;
+  currency: string;
+  description: string;
+  entryDate: string;
+  id: string;
+  metadata: LedgerEntryMetadata;
+  modelName: string;
+  postings: StructuredPosting[];
+  sourcePrompt: string;
+};
+
+export type JournalQueryFilters = {
+  accountName?: string | null;
+  endDate?: string | null;
+  maxAmount?: number | null;
+  minAmount?: number | null;
+  searchText?: string | null;
+  startDate?: string | null;
+  vendorName?: string | null;
 };

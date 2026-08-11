@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { ArrowUp, Check, LoaderCircle, RotateCcw } from "lucide-react";
 import { useState, type FormEvent } from "react";
 
@@ -118,7 +119,19 @@ export function AppHomeScreen({ ledgers }: AppHomeScreenProps) {
 
   return (
     <main className="relative flex min-h-screen items-center justify-center bg-zinc-950 px-4 pb-10 pt-16 text-white sm:pb-12 sm:pt-20">
-      <div className="absolute right-4 top-4 sm:right-6 sm:top-6">
+      <div className="absolute right-4 top-4 flex gap-2 sm:right-6 sm:top-6">
+        <Link
+          href="/journal"
+          className="inline-flex h-11 items-center justify-center rounded-full border border-white/10 bg-white/5 px-5 text-sm font-medium text-white transition hover:bg-white/10"
+        >
+          Journal
+        </Link>
+        <Link
+          href="/settings"
+          className="inline-flex h-11 items-center justify-center rounded-full border border-white/10 bg-white/5 px-5 text-sm font-medium text-white transition hover:bg-white/10"
+        >
+          Settings
+        </Link>
         <SignOutButton variant="ghost" />
       </div>
 

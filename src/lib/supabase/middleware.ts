@@ -4,7 +4,7 @@ import { type NextRequest, NextResponse } from "next/server";
 import { getSupabaseEnv, hasSupabaseEnv } from "@/lib/supabase/env";
 
 const PROTECTED_EXACT_PATHS = new Set(["/"]);
-const PROTECTED_PATH_PREFIXES = ["/dashboard"];
+const PROTECTED_PATH_PREFIXES = ["/dashboard", "/journal", "/settings"];
 
 function isProtectedRoute(pathname: string) {
   if (PROTECTED_EXACT_PATHS.has(pathname)) {
