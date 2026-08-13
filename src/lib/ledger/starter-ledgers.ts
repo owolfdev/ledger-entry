@@ -38,6 +38,8 @@ export const STARTER_LEDGER_TEMPLATES: StarterLedgerTemplate[] = [
       account("Expenses:Software", "expense", "Software subscriptions"),
       account("Expenses:Travel", "expense", "Flights, lodging, and transportation"),
       account("Expenses:Utilities", "expense", "Internet, phone, and utilities"),
+      account("Assets:SalaryAdvance", "asset", "Salary or wage advances to workers"),
+      account("Expenses:Contractors", "expense", "Contractor and handyman payments"),
     ],
   },
   {
@@ -62,6 +64,13 @@ export const STARTER_LEDGER_TEMPLATES: StarterLedgerTemplate[] = [
       account("Expenses:Shopping", "expense", "General shopping purchases"),
       account("Expenses:Transportation", "expense", "Fuel, transit, and rides"),
       account("Expenses:Utilities", "expense", "Electricity, internet, and phone"),
+      account("Assets:SalaryAdvance", "asset", "Salary or wage advances to workers"),
+      account("Expenses:HomeMaintenance", "expense", "Home repairs, handyman, and maintenance"),
+      account(
+        "Expenses:HouseholdStaff",
+        "expense",
+        "Maid, nanny, and other household staff wages",
+      ),
     ],
   },
 ];

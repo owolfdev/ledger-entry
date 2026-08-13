@@ -1,25 +1,26 @@
 import { NextResponse } from "next/server";
 
-import { generateLedgerPreview } from "@/lib/ledger/preview";
+import { executeJournalCommand } from "@/lib/ledger/commands/execute";
 import {
-  ensureRecommendedAccounts,
+  getLedgerAccounts,
+  getLedgerEntries,
   getLedgerForUser,
 } from "@/lib/ledger/service";
 import { createClient } from "@/lib/supabase/server";
 
-type PreviewRequestBody = {
+type ExecuteRequestBody = {
+  input?: string;
   ledgerId?: string;
-  prompt?: string;
 };
 
 export async function POST(request: Request) {
   try {
-    const body = (await request.json()) as PreviewRequestBody;
-    const prompt = body.prompt?.trim();
+    const body = (await request.json()) as ExecuteRequestBody;
+    const input = body.input?.trim();
 
-    if (!body.ledgerId || !prompt) {
+    if (!body.ledgerId || !input) {
       return NextResponse.json(
-        { error: "Missing ledgerId or prompt." },
+        { error: "Missing ledgerId or input." },
         { status: 400 },
       );
     }
@@ -39,17 +40,22 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Ledger not found." }, { status: 404 });
     }
 
-    const accounts = await ensureRecommendedAccounts(ledger.id, ledger.bookType);
-    const previews = await generateLedgerPreview({
+    const [accounts, entries] = await Promise.all([
+      getLedgerAccounts(ledger.id),
+      getLedgerEntries(ledger.id),
+    ]);
+
+    const result = await executeJournalCommand({
       accounts,
+      entries,
+      input,
       ledger,
-      prompt,
     });
 
-    return NextResponse.json({ previews });
+    return NextResponse.json({ result });
   } catch (error) {
     const message =
-      error instanceof Error ? error.message : "Failed to generate preview.";
+      error instanceof Error ? error.message : "Failed to execute journal command.";
 
     return NextResponse.json({ error: message }, { status: 500 });
   }

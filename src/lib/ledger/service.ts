@@ -1,4 +1,5 @@
 import { buildBeancountEntry } from "@/lib/ledger/preview";
+import { applyEntryLabels, type EntryLabelValues } from "@/lib/ledger/entry-labels";
 import { STARTER_LEDGER_TEMPLATES } from "@/lib/ledger/starter-ledgers";
 import type {
   LedgerAccount,
@@ -177,6 +178,72 @@ export async function getLedgerAccounts(ledgerId: string) {
   }
 
   return data as LedgerAccount[];
+}
+
+const RECOMMENDED_ACCOUNTS: Record<
+  LedgerSummary["bookType"],
+  Array<{ category: LedgerAccount["category"]; description: string; name: string }>
+> = {
+  business: [
+    {
+      category: "asset",
+      description: "Salary or wage advances to workers",
+      name: "Assets:SalaryAdvance",
+    },
+    {
+      category: "expense",
+      description: "Contractor and handyman payments",
+      name: "Expenses:Contractors",
+    },
+  ],
+  personal: [
+    {
+      category: "asset",
+      description: "Salary or wage advances to workers",
+      name: "Assets:SalaryAdvance",
+    },
+    {
+      category: "expense",
+      description: "Home repairs, handyman, and maintenance",
+      name: "Expenses:HomeMaintenance",
+    },
+    {
+      category: "expense",
+      description: "Maid, nanny, and other household staff wages",
+      name: "Expenses:HouseholdStaff",
+    },
+  ],
+};
+
+export async function ensureRecommendedAccounts(
+  ledgerId: string,
+  bookType: LedgerSummary["bookType"],
+) {
+  const existingAccounts = await getLedgerAccounts(ledgerId);
+  const existingNames = new Set(existingAccounts.map((account) => account.name));
+  const missingAccounts = RECOMMENDED_ACCOUNTS[bookType].filter(
+    (account) => !existingNames.has(account.name),
+  );
+
+  if (missingAccounts.length === 0) {
+    return existingAccounts;
+  }
+
+  const supabase = createAdminClient();
+  const { error } = await supabase.from("ledger_accounts").insert(
+    missingAccounts.map((account) => ({
+      category: account.category,
+      description: account.description,
+      ledger_id: ledgerId,
+      name: account.name,
+    })),
+  );
+
+  if (error) {
+    throw new Error(`Failed to ensure recommended accounts: ${error.message}`);
+  }
+
+  return getLedgerAccounts(ledgerId);
 }
 
 export async function createLedgerAccount(params: {
@@ -370,6 +437,54 @@ export async function getLedgerEntryById(entryId: string) {
   }
 
   return data;
+}
+
+export async function updateLedgerEntryLabels(params: {
+  entryId: string;
+  labels: EntryLabelValues;
+  userId: string;
+}) {
+  const originalEntry = await getLedgerEntryById(params.entryId);
+
+  if (!originalEntry) {
+    throw new Error("Ledger entry not found.");
+  }
+
+  const ledger = await getLedgerForUser(params.userId, originalEntry.ledger_id);
+
+  if (!ledger) {
+    throw new Error("Ledger not found.");
+  }
+
+  const structuredEntry = {
+    currency: originalEntry.currency,
+    description: originalEntry.description,
+    entryDate: originalEntry.entry_date,
+    metadata: (originalEntry.metadata ?? {}) as StructuredLedgerEntry["metadata"],
+    postings: originalEntry.postings as StructuredLedgerEntry["postings"],
+  };
+  const updatedEntry = applyEntryLabels(structuredEntry, params.labels);
+  const beancountText = buildBeancountEntry(updatedEntry);
+  const supabase = createAdminClient();
+  const { data, error } = await supabase
+    .from("ledger_entries")
+    .update({
+      beancount_text: beancountText,
+      description: updatedEntry.description,
+      metadata: updatedEntry.metadata ?? {},
+    })
+    .eq("id", params.entryId)
+    .eq("ledger_id", ledger.id)
+    .select(
+      "id, entry_date, description, currency, postings, metadata, beancount_text, model_name, source_prompt, created_at, status, reversal_of_entry_id, reversed_by_entry_id",
+    )
+    .single();
+
+  if (error) {
+    throw new Error(`Failed to update ledger entry labels: ${error.message}`);
+  }
+
+  return mapLedgerEntry(data as LedgerEntryRow);
 }
 
 export async function reverseLedgerEntry(params: {

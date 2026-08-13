@@ -24,6 +24,7 @@ export function normalizeJournalQueryFilters(
 ) {
   const allowedAccounts = new Set(accounts.map((account) => account.name));
   const normalized: JournalQueryFilters = {
+    accountCategory: filters.accountCategory ?? null,
     accountName:
       filters.accountName && allowedAccounts.has(filters.accountName)
         ? filters.accountName
@@ -38,6 +39,7 @@ export function normalizeJournalQueryFilters(
       typeof filters.minAmount === "number" && Number.isFinite(filters.minAmount)
         ? Math.abs(filters.minAmount)
         : null,
+    payee: cleanString(filters.payee),
     searchText: cleanString(filters.searchText),
     startDate:
       filters.startDate && DATE_REGEX.test(filters.startDate)

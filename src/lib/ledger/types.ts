@@ -67,10 +67,12 @@ export type LedgerEntryRecord = {
 };
 
 export type JournalQueryFilters = {
+  accountCategory?: AccountCategory | null;
   accountName?: string | null;
   endDate?: string | null;
   maxAmount?: number | null;
   minAmount?: number | null;
+  payee?: string | null;
   searchText?: string | null;
   startDate?: string | null;
   vendorName?: string | null;

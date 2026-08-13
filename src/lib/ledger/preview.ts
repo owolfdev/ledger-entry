@@ -1,3 +1,4 @@
+import { analyzePromptSegmentation } from "@/lib/ledger/segmentation";
 import type {
   LedgerAccount,
   LedgerEntryMetadata,
@@ -8,6 +9,26 @@ import type {
 import { DEFAULT_OPENAI_MODEL, createOpenAIClient } from "@/lib/openai";
 
 const ENTRY_DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
+
+const ACCOUNT_ALIASES: Record<string, string> = {
+  "Expenses:Salary": "Expenses:HouseholdStaff",
+  "Expenses:SalaryAdvance": "Assets:SalaryAdvance",
+  "Expenses:Wages": "Expenses:HouseholdStaff",
+};
+
+function resolveAccountName(name: string, allowedAccounts: Set<string>) {
+  if (allowedAccounts.has(name)) {
+    return name;
+  }
+
+  const alias = ACCOUNT_ALIASES[name];
+
+  if (alias && allowedAccounts.has(alias)) {
+    return alias;
+  }
+
+  return name;
+}
 
 type GeneratePreviewParams = {
   accounts: LedgerAccount[];
@@ -67,8 +88,12 @@ export function validateStructuredEntry(
   }
 
   const allowedAccounts = new Set(accounts.map((account) => account.name));
+  const normalizedPostings = entry.postings.map((posting) => ({
+    ...posting,
+    account: resolveAccountName(posting.account, allowedAccounts),
+  }));
 
-  entry.postings.forEach((posting) => {
+  normalizedPostings.forEach((posting) => {
     if (!allowedAccounts.has(posting.account)) {
       throw new Error(`Unknown account "${posting.account}" returned by the model.`);
     }
@@ -78,7 +103,7 @@ export function validateStructuredEntry(
     }
   });
 
-  const total = entry.postings.reduce((sum, posting) => sum + posting.amount, 0);
+  const total = normalizedPostings.reduce((sum, posting) => sum + posting.amount, 0);
 
   if (Math.abs(total) > 0.001) {
     throw new Error("Ledger entry postings must balance to zero.");
@@ -96,30 +121,95 @@ export function validateStructuredEntry(
     currency: entry.currency.toUpperCase(),
     description: entry.description.trim(),
     metadata,
+    postings: normalizedPostings,
   };
 }
+
+const structuredEntrySchema = {
+  type: "object",
+  additionalProperties: false,
+  properties: {
+    entryDate: { type: "string" },
+    description: { type: "string" },
+    currency: { type: "string" },
+    metadata: {
+      type: "object",
+      additionalProperties: false,
+      properties: {
+        vendorName: { type: ["string", "null"] },
+        paymentMethod: { type: ["string", "null"] },
+        reference: { type: ["string", "null"] },
+        notes: { type: ["string", "null"] },
+      },
+      required: ["vendorName", "paymentMethod", "reference", "notes"],
+    },
+    postings: {
+      type: "array",
+      minItems: 2,
+      items: {
+        type: "object",
+        additionalProperties: false,
+        properties: {
+          account: { type: "string" },
+          amount: { type: "number" },
+        },
+        required: ["account", "amount"],
+      },
+    },
+  },
+  required: ["entryDate", "description", "currency", "metadata", "postings"],
+} as const;
 
 export async function generateLedgerPreview({
   accounts,
   ledger,
   prompt,
-}: GeneratePreviewParams): Promise<LedgerEntryPreview> {
+}: GeneratePreviewParams): Promise<LedgerEntryPreview[]> {
   const client = createOpenAIClient();
   const today = new Date().toISOString().slice(0, 10);
+  const segmentation = analyzePromptSegmentation(prompt);
+  const accountNames = accounts.map((account) => account.name);
   const response = await client.chat.completions.create({
     model: DEFAULT_OPENAI_MODEL,
     messages: [
       {
         role: "system",
         content: [
-          "You are an accounting assistant that creates a single Beancount-compatible double-entry journal entry.",
-          "Use only the supplied account names.",
-          "Never invent accounts.",
+          "You are an accounting assistant that creates Beancount-compatible double-entry journal entries.",
+          "Decide whether the prompt is one compound entry or several separate entries.",
+          "Return multiple entries when the prompt lists complete transactions, especially when dates differ or each line restates a payee plus amount plus date.",
+          "Return exactly one entry with multiple postings when one payee and one date apply to several amount lines, such as a shared vendor header and a shared date around amount-only lines.",
+          "Do not split a compound payment just because it has more than one amount.",
+          "Do not merge complete transactions that have different dates.",
+          "If segmentation.hint is multiple, return one entry per transaction.",
+          "If segmentation.hint is compound, return exactly one entry and post every amount line inside it.",
+          "If segmentation.hint is single, return exactly one entry.",
+          "If segmentation.hint is unclear, apply the split-versus-compound rules above.",
+          "For a compound payment, post the cash or bank account for the total and each line item to its destination account.",
+          `Every posting account must be copied exactly from this list: ${accountNames.join(", ")}.`,
+          "Never invent, rename, or guess account names.",
+          "Never use Income accounts for money going out.",
+          "Salary advance is always Assets:SalaryAdvance. Never use Expenses:SalaryAdvance.",
+          "Map salary advance to Assets:SalaryAdvance.",
+          ledger.bookType === "personal"
+            ? "Map maid, nanny, domestic worker, and wage payments to Expenses:HouseholdStaff."
+            : "Map employee and payroll wages to Expenses:Payroll.",
+          ledger.bookType === "personal"
+            ? "Map handyman, repairs, and maintenance to Expenses:HomeMaintenance."
+            : "Map handyman and contractor payments to Expenses:Contractors or Expenses:Payroll.",
+          ledger.bookType === "personal"
+            ? "Map generic personal spending lines in a compound payment to Expenses:Shopping unless clearly household staff, maintenance, or an advance."
+            : "Map generic expense lines to the closest matching expense account.",
+          "Put the payee in metadata.vendorName only, not combined with role text.",
+          "Put role or job context such as maid or handyman in metadata.notes when clear.",
+          "Lines like 'notes: handyman' belong in metadata.notes.",
+          "Use a short purpose phrase for description, such as 'Maid payment' or 'Salary advance'.",
+          "Map cash payments to Assets:Cash with a negative amount for outflows.",
           `Use ${ledger.defaultCurrency} as the default currency unless the prompt clearly specifies another currency.`,
           `If the user does not provide a date, use ${today}.`,
           "Extract vendorName, paymentMethod, reference, and notes when they are reasonably clear; otherwise return null for those fields.",
           "Return JSON only.",
-          "All posting amounts must be explicit numeric values and must balance to zero.",
+          "All posting amounts must be explicit numeric values and every entry must balance to zero.",
         ].join(" "),
       },
       {
@@ -133,6 +223,7 @@ export async function generateLedgerPreview({
           bookType: ledger.bookType,
           defaultCurrency: ledger.defaultCurrency,
           prompt,
+          segmentation,
           today,
         }),
       },
@@ -140,47 +231,19 @@ export async function generateLedgerPreview({
     response_format: {
       type: "json_schema",
       json_schema: {
-        name: "ledger_entry_preview",
+        name: "ledger_entry_previews",
         strict: true,
         schema: {
           type: "object",
           additionalProperties: false,
           properties: {
-            entryDate: { type: "string" },
-            description: { type: "string" },
-            currency: { type: "string" },
-            metadata: {
-              type: "object",
-              additionalProperties: false,
-              properties: {
-                vendorName: { type: ["string", "null"] },
-                paymentMethod: { type: ["string", "null"] },
-                reference: { type: ["string", "null"] },
-                notes: { type: ["string", "null"] },
-              },
-              required: ["vendorName", "paymentMethod", "reference", "notes"],
-            },
-            postings: {
+            entries: {
               type: "array",
-              minItems: 2,
-              items: {
-                type: "object",
-                additionalProperties: false,
-                properties: {
-                  account: { type: "string" },
-                  amount: { type: "number" },
-                },
-                required: ["account", "amount"],
-              },
+              minItems: 1,
+              items: structuredEntrySchema,
             },
           },
-          required: [
-            "entryDate",
-            "description",
-            "currency",
-            "metadata",
-            "postings",
-          ],
+          required: ["entries"],
         },
       },
     },
@@ -192,14 +255,31 @@ export async function generateLedgerPreview({
     throw new Error("OpenAI did not return a structured ledger preview.");
   }
 
-  const parsedEntry = JSON.parse(rawContent) as StructuredLedgerEntry;
-  const validatedEntry = validateStructuredEntry(parsedEntry, accounts);
+  const parsed = JSON.parse(rawContent) as { entries?: StructuredLedgerEntry[] };
 
-  return {
-    beancountText: buildBeancountEntry(validatedEntry),
-    entry: validatedEntry,
-    ledger,
-    model: DEFAULT_OPENAI_MODEL,
-    sourcePrompt: prompt,
-  };
+  if (!parsed.entries?.length) {
+    throw new Error("OpenAI did not return any ledger entries.");
+  }
+
+  const entryCount = parsed.entries.length;
+
+  return parsed.entries.map((entry, index) => {
+    try {
+      const validatedEntry = validateStructuredEntry(entry, accounts);
+
+      return {
+        beancountText: buildBeancountEntry(validatedEntry),
+        entry: validatedEntry,
+        ledger,
+        model: DEFAULT_OPENAI_MODEL,
+        sourcePrompt: prompt,
+      };
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Failed to validate ledger entry.";
+      throw new Error(
+        entryCount > 1 ? `Entry ${index + 1}: ${message}` : message,
+      );
+    }
+  });
 }
