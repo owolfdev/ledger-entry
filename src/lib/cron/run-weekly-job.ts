@@ -7,7 +7,7 @@ export async function runWeeklyJob() {
 
   const { data, error } = await supabase
     .from(tableName)
-    .insert({})
+    .insert({ updated_at: startedAt })
     .select("*")
     .single();
 
@@ -20,7 +20,7 @@ export async function runWeeklyJob() {
   return {
     insertedRecord: data,
     startedAt,
-    summary: `Inserted a weekly record into "${tableName}".`,
+    summary: `Inserted weekly audit record into "${tableName}".`,
     tableName,
   };
 }

@@ -165,6 +165,12 @@ export function entriesForBalance(entries: LedgerEntryRecord[]) {
   return entries.filter((entry) => entry.status !== "reversed");
 }
 
+export function entriesForActiveTotals(entries: LedgerEntryRecord[]) {
+  return entries.filter(
+    (entry) => entry.status !== "reversed" && !entry.reversalOfEntryId,
+  );
+}
+
 export function sumEntryAmount(
   entry: LedgerEntryRecord,
   filters: CommandFilters,
@@ -206,4 +212,17 @@ export function collectKnownPayees(entries: LedgerEntryRecord[]) {
   }
 
   return [...payees].sort((left, right) => left.localeCompare(right));
+}
+
+export function collectKnownNotePhrases(entries: LedgerEntryRecord[]) {
+  const notes = new Set<string>();
+
+  for (const entry of entries) {
+    const note = entry.metadata.notes?.trim();
+    if (note) {
+      notes.add(note);
+    }
+  }
+
+  return [...notes].sort((left, right) => left.localeCompare(right));
 }

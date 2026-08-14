@@ -197,7 +197,7 @@ export function getHelpText() {
     "",
     "Natural language is also supported, for example:",
     '  "show Tee entries in August"',
-    '  "how much did I spend on Charty?"',
-    '  "sum expenses for charty"',
+    '  "sum all expenses for dining room door project"',
+    '  -> sum --category expense --search "dining room door project"',
   ].join("\n");
 }

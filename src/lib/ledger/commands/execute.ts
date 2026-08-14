@@ -1,16 +1,20 @@
 import { formatCommandLine } from "@/lib/ledger/commands/format";
 import {
   collectKnownPayees,
+  entriesForActiveTotals,
   entriesForBalance,
   filterLedgerEntries,
   normalizeCommandFilters,
   sumEntryAmount,
 } from "@/lib/ledger/commands/filters";
+import { augmentFiltersFromPrompt } from "@/lib/ledger/commands/nl-augment";
 import { getHelpText, parseExplicitCommand } from "@/lib/ledger/commands/parser";
 import { routeJournalCommand } from "@/lib/ledger/commands/router";
 import type {
   AccountBalanceRow,
   CommandExecutionResult,
+  CommandFilters,
+  CommandName,
   ResolveCommandResult,
 } from "@/lib/ledger/commands/types";
 import type {
@@ -52,6 +56,24 @@ function computeBalances(
     .sort((left, right) => left.account.localeCompare(right.account));
 }
 
+function finalizeResolvedCommand(
+  input: string,
+  name: CommandName,
+  filters: CommandFilters,
+  accounts: LedgerAccount[],
+  routedBy: ResolveCommandResult["routedBy"],
+): ResolveCommandResult {
+  const augmented = augmentFiltersFromPrompt(input, name, filters);
+  const normalized = normalizeCommandFilters(augmented, accounts);
+
+  return {
+    commandLine: formatCommandLine(name, normalized),
+    filters: normalized,
+    name,
+    routedBy,
+  };
+}
+
 export async function resolveJournalCommand({
   accounts,
   entries,
@@ -61,22 +83,29 @@ export async function resolveJournalCommand({
   const explicit = parseExplicitCommand(input);
 
   if (explicit) {
-    const filters = normalizeCommandFilters(explicit.args, accounts);
-
-    return {
-      commandLine: formatCommandLine(explicit.name, filters),
-      filters,
-      name: explicit.name,
-      routedBy: "explicit",
-    };
+    return finalizeResolvedCommand(
+      input,
+      explicit.name,
+      explicit.args,
+      accounts,
+      "explicit",
+    );
   }
 
-  return routeJournalCommand({
+  const routed = await routeJournalCommand({
     accounts,
     entries,
     ledger,
     prompt: input,
   });
+
+  return finalizeResolvedCommand(
+    input,
+    routed.name,
+    routed.filters,
+    accounts,
+    routed.routedBy,
+  );
 }
 
 export async function executeJournalCommand({
@@ -91,7 +120,8 @@ export async function executeJournalCommand({
     input,
     ledger,
   });
-  const filteredEntries = filterLedgerEntries(entries, resolved.filters, accounts);
+  const activeEntries = entriesForActiveTotals(entries);
+  const filteredEntries = filterLedgerEntries(activeEntries, resolved.filters, accounts);
   const balanceEntries = filterLedgerEntries(
     entriesForBalance(entries),
     resolved.filters,

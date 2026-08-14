@@ -1,5 +1,5 @@
 import { formatCommandLine } from "@/lib/ledger/commands/format";
-import { collectKnownPayees, normalizeCommandFilters } from "@/lib/ledger/commands/filters";
+import { collectKnownNotePhrases, collectKnownPayees, normalizeCommandFilters } from "@/lib/ledger/commands/filters";
 import type {
   CommandFilters,
   CommandName,
@@ -29,6 +29,7 @@ export async function routeJournalCommand({
   const client = createOpenAIClient();
   const today = new Date().toISOString().slice(0, 10);
   const knownPayees = collectKnownPayees(entries);
+  const knownNotePhrases = collectKnownNotePhrases(entries);
   const response = await client.chat.completions.create({
     model: DEFAULT_OPENAI_MODEL,
     messages: [
@@ -41,13 +42,20 @@ export async function routeJournalCommand({
           "Choose balance when the user asks for account balances or what an account total is.",
           "Choose accounts when the user asks to list accounts or chart of accounts.",
           "Choose help when the user asks what commands are available.",
-          "Use payee for person or vendor names such as Tee or Charty. Payee matches vendor and description partially.",
+          "Use payee only for a known person or vendor name from known payees.",
+          "Never set payee to phrases containing expenses, all, notes, for, or project.",
+          "Leave payee null when the user describes a note, project, or search phrase.",
           "Use vendorName only when the user clearly means the stored vendor field.",
           "When the user says expenses or spending, set accountCategory to expense.",
+          "When the user says 'for [phrase]', 'notes: [phrase]', or 'about [phrase]', put the phrase in searchText.",
+          "Example: 'sum all expenses for dining room door project' -> command sum, accountCategory expense, searchText 'dining room door project', payee null.",
+          "Example: 'sum all expenses: notes: dining room door project' -> command sum, accountCategory expense, searchText 'dining room door project', payee null.",
+          "Project, note, and label phrases belong in searchText, not payee.",
           "When the user names an expense category like software, use searchText or accountName if an exact account exists.",
           "Use only supplied account names for accountName.",
           "If a filter is not clearly specified, return null for that field.",
           `Known payees in this ledger: ${knownPayees.join(", ") || "none yet"}.`,
+          `Known note phrases in this ledger: ${knownNotePhrases.join(", ") || "none yet"}.`,
           `Use ${today} as the reference date for relative periods like 'last month' or 'August'.`,
           "Amount thresholds should be positive numbers.",
           "Return JSON only.",
@@ -58,6 +66,7 @@ export async function routeJournalCommand({
         content: JSON.stringify({
           availableAccounts: accounts.map((account) => account.name),
           defaultCurrency: ledger.defaultCurrency,
+          knownNotePhrases,
           knownPayees,
           ledgerName: ledger.name,
           prompt,
@@ -127,6 +136,6 @@ export async function routeJournalCommand({
     commandLine: formatCommandLine(parsed.command, filters),
     filters,
     name: parsed.command,
-    routedBy: "natural-language",
+    routedBy: "natural-language" as const,
   };
 }

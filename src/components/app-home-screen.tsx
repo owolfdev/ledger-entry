@@ -207,27 +207,35 @@ export function AppHomeScreen({ ledgers }: AppHomeScreenProps) {
             />
           ))}
 
+          <div className="mx-auto w-full max-w-sm">
+            <label
+              htmlFor="home-ledger-select"
+              className="mb-2 block text-sm font-medium text-zinc-400"
+            >
+              Ledger
+            </label>
+            <select
+              id="home-ledger-select"
+              value={selectedLedgerId}
+              onChange={(event) => {
+                const nextLedgerId = event.target.value;
+                setSelectedLedgerId(nextLedgerId);
+                void persistSelectedLedger(nextLedgerId);
+              }}
+              className="w-full rounded-2xl border border-white/10 bg-zinc-900/80 px-4 py-3 text-sm text-white outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/60"
+            >
+              {ledgers.map((ledger) => (
+                <option key={ledger.id} value={ledger.id}>
+                  {ledger.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
           <form
             onSubmit={handleSubmit}
             className="w-full rounded-[28px] border border-white/10 bg-zinc-900/80 p-3 shadow-2xl shadow-black/20"
           >
-            <div className="px-3 pb-3">
-              <select
-                value={selectedLedgerId}
-                onChange={(event) => {
-                  const nextLedgerId = event.target.value;
-                  setSelectedLedgerId(nextLedgerId);
-                  void persistSelectedLedger(nextLedgerId);
-                }}
-                className="w-full rounded-2xl border border-white/10 bg-zinc-950 px-4 py-3 text-sm text-white outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/60"
-              >
-                {ledgers.map((ledger) => (
-                  <option key={ledger.id} value={ledger.id}>
-                    {ledger.name}
-                  </option>
-                ))}
-              </select>
-            </div>
             <Textarea
               value={prompt}
               onChange={(event) => setPrompt(event.target.value)}
