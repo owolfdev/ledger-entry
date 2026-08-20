@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowUp, Check, LoaderCircle, RotateCcw } from "lucide-react";
-import { useEffect, useState, type FormEvent } from "react";
+import { ArrowUp, Camera, Check, LoaderCircle, RotateCcw } from "lucide-react";
+import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from "react";
 
 import { persistSelectedLedger } from "@/lib/ledger/persist-selected-ledger";
 import { SignOutButton } from "@/components/sign-out-button";
@@ -36,6 +36,20 @@ export function AppHomeScreen({ ledgers }: AppHomeScreenProps) {
   const [error, setError] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [savingClientId, setSavingClientId] = useState<string | null>(null);
+  const imageInputRef = useRef<HTMLInputElement>(null);
+
+  async function loadPreviewsFromResponse(response: Response) {
+    const data = (await response.json()) as {
+      error?: string;
+      previews?: LedgerEntryPreview[];
+    };
+
+    if (!response.ok || !data.previews?.length) {
+      throw new Error(data.error ?? "Failed to generate ledger preview.");
+    }
+
+    setPreviews(attachClientIds(data.previews));
+  }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -61,21 +75,47 @@ export function AppHomeScreen({ ledgers }: AppHomeScreenProps) {
         method: "POST",
       });
 
-      const data = (await response.json()) as {
-        error?: string;
-        previews?: LedgerEntryPreview[];
-      };
-
-      if (!response.ok || !data.previews?.length) {
-        throw new Error(data.error ?? "Failed to generate ledger preview.");
-      }
-
-      setPreviews(attachClientIds(data.previews));
+      await loadPreviewsFromResponse(response);
     } catch (submitError) {
       setError(
         submitError instanceof Error
           ? submitError.message
           : "Failed to generate ledger preview.",
+      );
+    } finally {
+      setIsGenerating(false);
+    }
+  }
+
+  async function handleImageSelected(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+
+    if (!file || !selectedLedgerId) {
+      return;
+    }
+
+    setError(null);
+    setSavedMessage(null);
+    setPreviews([]);
+    setIsGenerating(true);
+
+    try {
+      const formData = new FormData();
+      formData.append("ledgerId", selectedLedgerId);
+      formData.append("image", file);
+
+      const response = await fetch("/api/entries/preview-image", {
+        body: formData,
+        method: "POST",
+      });
+
+      await loadPreviewsFromResponse(response);
+    } catch (imageError) {
+      setError(
+        imageError instanceof Error
+          ? imageError.message
+          : "Failed to generate preview from receipt photo.",
       );
     } finally {
       setIsGenerating(false);
@@ -256,18 +296,42 @@ export function AppHomeScreen({ ledgers }: AppHomeScreenProps) {
                   </p>
                 )}
               </div>
-              <Button
-                type="submit"
-                size="icon"
-                disabled={!prompt.trim() || !selectedLedgerId || isGenerating || isSaving}
-              >
-                {isGenerating ? (
-                  <LoaderCircle className="size-4 animate-spin" />
-                ) : (
-                  <ArrowUp className="size-4" />
-                )}
-                <span className="sr-only">Generate ledger preview</span>
-              </Button>
+              <div className="flex items-center gap-2">
+                <input
+                  ref={imageInputRef}
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  className="hidden"
+                  onChange={(event) => void handleImageSelected(event)}
+                />
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="icon"
+                  disabled={!selectedLedgerId || isGenerating || isSaving}
+                  onClick={() => imageInputRef.current?.click()}
+                >
+                  {isGenerating ? (
+                    <LoaderCircle className="size-4 animate-spin" />
+                  ) : (
+                    <Camera className="size-4" />
+                  )}
+                  <span className="sr-only">Capture or upload receipt photo</span>
+                </Button>
+                <Button
+                  type="submit"
+                  size="icon"
+                  disabled={!prompt.trim() || !selectedLedgerId || isGenerating || isSaving}
+                >
+                  {isGenerating ? (
+                    <LoaderCircle className="size-4 animate-spin" />
+                  ) : (
+                    <ArrowUp className="size-4" />
+                  )}
+                  <span className="sr-only">Generate ledger preview</span>
+                </Button>
+              </div>
             </div>
           </form>
         </div>
