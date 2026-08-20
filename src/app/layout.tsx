@@ -14,7 +14,12 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Ledger Accounting",
-  description: "Next.js starter with Supabase authentication.",
+  description:
+    "Natural-language bookkeeping with journal, receipts, and ledger commands.",
+  applicationName: "Ledger",
+  appleWebApp: {
+    title: "Ledger",
+  },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
