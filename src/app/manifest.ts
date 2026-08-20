@@ -1,9 +1,6 @@
 import type { MetadataRoute } from "next";
 
-import {
-  APP_ICON_BACKGROUND,
-  APP_ICON_FOREGROUND,
-} from "@/lib/brand/render-ledger-app-icon";
+import { APP_ICON_BACKGROUND } from "@/lib/brand/ledger-app-icon-svg";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
@@ -14,25 +11,25 @@ export default function manifest(): MetadataRoute.Manifest {
       {
         purpose: "any",
         sizes: "32x32",
-        src: "/icon/32",
+        src: "/icons/icon.png",
+        type: "image/png",
+      },
+      {
+        purpose: "any",
+        sizes: "180x180",
+        src: "/icons/apple-icon.png",
         type: "image/png",
       },
       {
         purpose: "any",
         sizes: "192x192",
-        src: "/icon/192",
+        src: "/icons/icon-192.png",
         type: "image/png",
       },
       {
         purpose: "any",
         sizes: "512x512",
-        src: "/icon/512",
-        type: "image/png",
-      },
-      {
-        purpose: "maskable",
-        sizes: "512x512",
-        src: "/icon/512",
+        src: "/icons/icon-512.png",
         type: "image/png",
       },
     ],

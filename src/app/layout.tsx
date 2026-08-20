@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+
 import "./globals.css";
 
 const geistSans = Geist({
@@ -19,6 +20,16 @@ export const metadata: Metadata = {
   applicationName: "Ledger",
   appleWebApp: {
     title: "Ledger",
+  },
+  icons: {
+    apple: [{ url: "/icons/apple-icon.png", sizes: "180x180", type: "image/png" }],
+    icon: [{ url: "/icons/icon.png", sizes: "32x32", type: "image/png" }],
+    other: [
+      {
+        rel: "apple-touch-icon-precomposed",
+        url: "/icons/apple-icon.png",
+      },
+    ],
   },
 };
 
