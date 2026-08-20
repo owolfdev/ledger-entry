@@ -11,19 +11,13 @@ const BOOK_OPEN_TEXT_PATHS = [
 ] as const;
 
 export function buildLedgerAppIconSvg(size: number) {
-  const padding = Math.round(size * 0.12);
-  const iconSize = size - padding * 2;
-  const strokeWidth = Math.max(2, size / 11);
-  const paths = BOOK_OPEN_TEXT_PATHS.map(
-    (path) =>
-      `<path d="${path}" stroke="${APP_ICON_FOREGROUND}" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-linejoin="round" fill="none" />`,
-  ).join("");
+  const paths = BOOK_OPEN_TEXT_PATHS.map((path) => `<path d="${path}" />`).join("");
 
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
-  <rect width="${size}" height="${size}" rx="${Math.round(size * 0.2)}" fill="${APP_ICON_BACKGROUND}" />
-  <svg x="${padding}" y="${padding}" width="${iconSize}" height="${iconSize}" viewBox="0 0 24 24" fill="none">
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 24 24">
+  <rect width="24" height="24" rx="4.8" fill="${APP_ICON_BACKGROUND}" />
+  <g stroke="${APP_ICON_FOREGROUND}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none">
     ${paths}
-  </svg>
+  </g>
 </svg>`;
 }
 
