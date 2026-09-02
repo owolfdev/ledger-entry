@@ -13,14 +13,14 @@ export async function runWeeklyJob() {
 
   if (error) {
     throw new Error(
-      `Failed to insert weekly update record into "${tableName}": ${error.message}`,
+      `Failed to insert daily update record into "${tableName}": ${error.message}`,
     );
   }
 
   return {
     insertedRecord: data,
     startedAt,
-    summary: `Inserted weekly audit record into "${tableName}".`,
+    summary: `Inserted daily audit record into "${tableName}".`,
     tableName,
   };
 }
