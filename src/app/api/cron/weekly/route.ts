@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { runWeeklyJob } from "@/lib/cron/run-weekly-job";
 import { verifyCronRequest } from "@/lib/cron/verify-cron-request";
 
+export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 export async function GET(request: Request) {
