@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { runWeeklyJob } from "@/lib/cron/run-weekly-job";
+import { runDailyJob } from "@/lib/cron/run-daily-job";
 import { verifyCronRequest } from "@/lib/cron/verify-cron-request";
 
 export const dynamic = "force-dynamic";
@@ -14,7 +14,7 @@ export async function GET(request: Request) {
   }
 
   try {
-    const result = await runWeeklyJob();
+    const result = await runDailyJob();
 
     return NextResponse.json({
       ok: true,
@@ -22,7 +22,7 @@ export async function GET(request: Request) {
     });
   } catch (error) {
     const message =
-      error instanceof Error ? error.message : "Weekly cron job failed.";
+      error instanceof Error ? error.message : "Daily cron job failed.";
 
     return NextResponse.json({ error: message, ok: false }, { status: 500 });
   }

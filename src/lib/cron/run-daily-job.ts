@@ -1,8 +1,11 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 
-export async function runWeeklyJob() {
+export async function runDailyJob() {
   const startedAt = new Date().toISOString();
-  const tableName = process.env.SUPABASE_WEEKLY_UPDATE_TABLE ?? "update";
+  const tableName =
+    process.env.SUPABASE_DAILY_UPDATE_TABLE ??
+    process.env.SUPABASE_WEEKLY_UPDATE_TABLE ??
+    "update";
   const supabase = createAdminClient();
 
   const { data, error } = await supabase
